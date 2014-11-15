@@ -8,10 +8,12 @@ endif
 EXE = libhwloc_helpers.$(SUFFIX)
 
 INCDIRS = $(HWLOC_DIRS:%=%/include)
+LIBDIRS = $(HWLOC_DIRS:%=%/lib)
+LIBS = hwloc
 
 all: $(EXE)
 $(EXE): $(OBJS)
-	libtool -dynamic -o $@ $^
+	libtool $(LIBDIRS:%=-L%) -dynamic -o $@ $^ $(LIBS:%=-l%)
 %.o: %.c
 	$(CC) $(INCDIRS:%=-I%) $(CPPFLAGS) -O $(CFLAGS) -fPIC -c $*.c
 

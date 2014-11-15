@@ -1,3 +1,7 @@
 *.dylib
 *.o
 deps.jl
+deps/builds
+deps/downloads
+deps/src/hwloc-1.10.0
+deps/usr
