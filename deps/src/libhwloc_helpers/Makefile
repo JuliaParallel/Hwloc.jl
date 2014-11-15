@@ -37,7 +37,7 @@ install: $(EXE)
 ifeq ($(shell uname), Darwin)
 	install $^ $(PREFIX)/lib
 else
-	libtool --mode=install install $(^:%.o=%.lo) $(PREFIX)/lib
+	libtool --mode=install install $(^:%.$(SUFFIX)=%.la) $(PREFIX)/lib
 endif
 endif
 
