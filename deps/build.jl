@@ -24,9 +24,7 @@ destdir = joinpath(BinDeps.depsdir(libhwloc_helpers), "usr")
 provides(Sources,
          Dict(URI("http://www.open-mpi.org/software/hwloc/v1.10/downloads/hwloc-1.10.0.tar.gz") => libhwloc))
 provides(BuildProcess, Dict(Autotools(libtarget="src/libhwloc.la",
-                                      configure_options=["--without-x"
-                                                         #"--prefix=$(destdir)"
-                                                         ]) =>
+                                      configure_options=["--without-x"]) =>
                             libhwloc))
 
 
@@ -34,7 +32,7 @@ provides(BuildProcess, Dict(Autotools(libtarget="src/libhwloc.la",
 srcdir = joinpath(BinDeps.depsdir(libhwloc_helpers), "src", "libhwloc_helpers")
 provides(SimpleBuild,
          (@build_steps begin
-             MakeTargets(srcdir, ["all", "HWLOC_DIRS=$(destdir) /opt/local"])
+             MakeTargets(srcdir, ["all", "HWLOC_DIR=$(destdir)"])
              MakeTargets(srcdir, ["install", "PREFIX=$(destdir)"])
           end),
          libhwloc_helpers)

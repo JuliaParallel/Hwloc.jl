@@ -7,8 +7,8 @@ SUFFIX = so
 endif
 EXE = libhwloc_helpers.$(SUFFIX)
 
-INCDIRS = $(HWLOC_DIRS:%=%/include)
-LIBDIRS = $(HWLOC_DIRS:%=%/lib)
+INCDIRS = $(HWLOC_DIR:%=%/include)
+LIBDIRS = $(HWLOC_DIR:%=%/lib)
 LIBS = hwloc
 
 all: $(EXE)
