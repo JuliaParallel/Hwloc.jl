@@ -27,6 +27,7 @@ and returns a tree structure describing this topology. This
 corresponds to the output of the `lstopo` program.
 
 ```
+import hwloc
 topology = hwloc.topology_load()
 println("Machine topology:")
 print(topology)
@@ -37,6 +38,7 @@ The function `hwloc.info` does this, similar to the output of the
 `hwloc-info` program.
 
 ```
+import hwloc
 topology = hwloc.topology_load()
 summary = hwloc.summary(topology)
 ncores = Dict(summary)[:Core]
