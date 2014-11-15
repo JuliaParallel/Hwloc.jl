@@ -8,7 +8,7 @@ libhwloc = library_dependency("libhwloc")
 libhwloc_helpers = library_dependency("libhwloc_helpers")
 
 # Install via a package manager
-provides(AptGet, Dict("hwloc" => libhwloc))
+provides(AptGet, Dict("libhwloc-dev" => libhwloc))
 
 #fails @osx_only begin
 #fails     using Homebrew
