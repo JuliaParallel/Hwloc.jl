@@ -9,7 +9,14 @@ libhwloc_helpers = library_dependency("libhwloc_helpers")
 
 # Install via a package manager
 provides(AptGet, Dict("hwloc" => libhwloc))
+
+#fails @osx_only begin
+#fails     using Homebrew
+#fails     provides(Homebrew.HB, Dict("hwloc" => libhwloc))
+#fails end
+
 provides(Port, Dict("hwloc" => libhwloc))
+
 #untested provides(Yum, Dict("hwloc-devel" => libhwloc))
 
 # Build from source
