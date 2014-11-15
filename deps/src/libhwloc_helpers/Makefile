@@ -33,11 +33,10 @@ endif
 
 ifneq ($(strip $(PREFIX)),)
 install: $(EXE)
-ifeq ($(shell uname), Darwin)
 	install -d $(PREFIX)/lib
+ifeq ($(shell uname), Darwin)
 	install $^ $(PREFIX)/lib
 else
-	libtool --mode=install install -d $(PREFIX)/lib
 	libtool --mode=install install $^ $(PREFIX)/lib
 endif
 endif
