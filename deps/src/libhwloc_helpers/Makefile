@@ -11,15 +11,19 @@ INCDIRS = $(HWLOC_DIR:%=%/include)
 LIBDIRS = $(HWLOC_DIR:%=%/lib)
 LIBS = hwloc
 
+CPPFLAGS = $(INCDIRS:%=-I%)
+CFLAGS = -g -O
+LDFLAGS = -g -O $(LIBDIRS:%=-L%)
+
 all: $(EXE)
 $(EXE): $(OBJS)
 ifeq ($(shell uname), Darwin)
 	libtool $(LIBDIRS:%=-L%) -dynamic -o $@ $^ $(LIBS:%=-l%)
 else
-	libtool --mode=link $(CC) $(LIBDIRS:%=-L%) $(LDFLAGS) -shared -o $@ $^ $(LIBS:%=-l%)
+	libtool --mode=link --tag=CC $(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS:%=-l%)
 endif
 %.o: %.c
-	$(CC) $(INCDIRS:%=-I%) $(CPPFLAGS) -O $(CFLAGS) -fPIC -c $*.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -c $*.c
 
 ifneq ($(strip $(PREFIX)),)
 install: $(EXE)
