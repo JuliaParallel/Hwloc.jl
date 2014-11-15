@@ -13,7 +13,11 @@ LIBS = hwloc
 
 all: $(EXE)
 $(EXE): $(OBJS)
+ifeq ($(shell uname), Darwin)
 	libtool $(LIBDIRS:%=-L%) -dynamic -o $@ $^ $(LIBS:%=-l%)
+else
+	libtool --mode=link $(LIBDIRS:%=-L%) -shared -o $@ $^ $(LIBS:%=-l%)
+endif
 %.o: %.c
 	$(CC) $(INCDIRS:%=-I%) $(CPPFLAGS) -O $(CFLAGS) -fPIC -c $*.c
 
