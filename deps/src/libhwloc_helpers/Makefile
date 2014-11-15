@@ -19,7 +19,7 @@ all: $(EXE)
 
 $(EXE): $(OBJS)
 ifeq ($(shell uname), Darwin)
-	libtool $(LIBDIRS:%=-L%) -dynamic -o $@ $^ $(LIBS:%=-l%)
+	libtool $(LIBDIRS:%=-L%) -dynamic -o $(@:%.$(SUFFIX)=%.la) $(^:%.o=%.lo) $(LIBS:%=-l%)
 else
 	libtool --mode=link --tag=CC $(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS:%=-l%)
 endif
