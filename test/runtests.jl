@@ -9,15 +9,10 @@ println("Topology:")
 print(topology)
 @test isa(topology, hwloc.Object)
 
-counts = hwloc.hist(topology)
+counts = hwloc.hist_map(topology)
 println("Histogram map:")
 println(counts)
 @test counts[:PU] > 0
-
-types, counts = hwloc.hist(topology)
-println("Histogram:")
-println(zip(types, counts))
-@test counts[findfirst(types, :PU)] > 0
 
 info = hwloc.info(topology)
 println("Info:")
