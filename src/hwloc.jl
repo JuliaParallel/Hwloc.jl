@@ -2,12 +2,11 @@ module hwloc
 
 import Base: isempty, start, done, next, length
 import Base: show
-import Base: hist
 
 using BinDeps
 include("../deps/deps.jl")
 
-export get_api_version, topology_load, info, hist_map, hist
+export get_api_version, topology_load, info, hist_map
 
 
 
@@ -145,11 +144,6 @@ function hist_map(obj::Object)
     counts = Dict{Symbol,Int}([t=>0 for t in obj_types])
     foldl((_,obj)->(counts[obj.obj_type]+=1; nothing), nothing, obj)
     return counts
-end
-
-function hist(obj::Object)
-    counts = hist_map(obj)
-    return obj_types, [counts[t] for t in obj_types]
 end
 
 end
