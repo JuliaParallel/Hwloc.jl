@@ -10,13 +10,137 @@ export get_api_version, topology_load, info, hist_map
 
 
 
+# Note: These must correspond to <hwloc.h>
+
+typealias hwloc_bitmap_t Ptr{Void}
+typealias hwloc_cpuset_t hwloc_bitmap_t
+typealias hwloc_nodeset_t hwloc_bitmap_t
+
+typealias hwloc_obj_type_t Cint
+typealias hwloc_obj_cache_type_t Cint
+typealias hwloc_obj_bridge_type_t Cint
+typealias hwloc_obj_osdev_type_t Cint
+
+immutable hwloc_obj_memory_page_type_s
+    size::UInt64
+    count::UInt64
+end
+
+immutable hwloc_obj_memory_s
+    total_memory::Uint64
+    local_memory::Uint64
+    page_types_len::Cuint
+    page_types::Ptr{hwloc_obj_memory_page_type_s}
+end
+
+immutable hwloc_distances_s
+    relative_depth::Cuint
+    nbobjs::Cuint
+    latency::Ptr{Cfloat}
+    latency_max::Cfloat
+    latency_base::Cfloat
+end
+
+immutable hwloc_obj_info_s
+    name::Ptr{Cchar}
+    value::Ptr{Cchar}
+end
+
+immutable hwloc_obj
+    # physical information
+    type_::hwloc_obj_type_t
+    os_index::Cuint
+    name::Ptr{Cchar}
+    memory::hwloc_obj_memory_s
+    attr::Ptr{Void}             # Ptr{hwloc_obj_attr_u}
+    
+    # global position
+    depth::Cuint
+    logical_index::Cuint
+    os_level::Cint
+    
+    # cousins
+    next_cousin::Ptr{hwloc_obj}
+    prev_cousin::Ptr{hwloc_obj}
+    
+    # siblings
+    parent::Ptr{hwloc_obj}
+    sibling_rank::Cuint
+    next_sibling::Ptr{hwloc_obj}
+    prev_sibling::Ptr{hwloc_obj}
+    
+    # children
+    arity::Cuint
+    children::Ptr{Ptr{hwloc_obj}}
+    first_child::Ptr{hwloc_obj}
+    last_child::Ptr{hwloc_obj}
+    
+    # misc
+    userdata::Ptr{Void}
+    
+    # cpusets and nodesets
+    cpuset::hwloc_cpuset_t
+    complete_cpuset::hwloc_cpuset_t
+    online_cpuset::hwloc_cpuset_t
+    allowed_cpuset::hwloc_cpuset_t
+    nodeset::hwloc_nodeset_t
+    complete_nodeset::hwloc_nodeset_t
+    allowed_nodeset::hwloc_nodeset_t
+    
+    # distances
+    distances::Ptr{Ptr{hwloc_distances_s}}
+    distances_count::Cuint
+    
+    # infos
+    infos::Ptr{hwloc_obj_info_s}
+    infos_count::Cuint
+    
+    # symmetry
+    symmetric_subtree::Cint
+end
+typealias hwloc_obj_t Ptr{hwloc_obj}
+
+immutable hwloc_cache_attr_s
+    size::UInt64
+    depth::Cuint
+    linesize::Cuint
+    assiciativity::Cint
+    type_::hwloc_obj_cache_type_t
+end
+
+immutable hwloc_group_attr_s
+    depth::Cuint
+end
+
+immutable hwloc_pcidev_attr_s
+    domain::Cushort
+    bus::Cuchar
+    dev::Cuchar
+    func::Cuchar
+    class_id::Cushort
+    vendor_id::Cushort
+    device_id::Cushort
+    subvendor_id::Cushort
+    subdevice_id::Cushort
+    revision::Cuchar
+    linkspeed::Cfloat
+end
+
+# hwloc_bridge_attr_s
+
+immutable hwloc_osdev_attr_s
+    type_::hwloc_obj_osdev_type_t
+end
+
+
+
 # Note: This must correspond to <hwloc.h>
 const obj_types = Symbol[:System, :Machine, :Node, :Socket, :Cache, :Core, :PU,
                          :Group, :Misc, :Bridge, :PCI_Device, :OS_Device,
                          :Error]
 
 type Object
-    obj_type::Symbol
+    type_::Symbol
     os_index::Int
     name::ASCIIString
     depth::Int
@@ -41,7 +165,7 @@ length(obj::Object) = mapreduce(x->1, +, obj)
 
 function show(io::IO, obj::Object)
     println(io, repeat(" ", 4*max(0,obj.depth)), "D$(obj.depth): ",
-            "$(string(obj.obj_type)) ",
+            "$(string(obj.type_)) ",
             "L$(obj.logical_index) P$(obj.os_index) $(obj.name)")
     for child in obj.children
         show(io, child)
@@ -73,7 +197,7 @@ function topology_load()
     nroots = int(ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cuint,
                        (Ptr{Void}, Cuint), htopo, 0))
     @assert nroots == 1
-    root = ccall((:hwloc_get_obj_by_depth, libhwloc), Ptr{Void},
+    root = ccall((:hwloc_get_obj_by_depth, libhwloc), hwloc_obj_t,
                  (Ptr{Void}, Cuint, Cuint), htopo, 0, 0)
     topo = load(root)
     
@@ -83,39 +207,28 @@ function topology_load()
 end
 
 # Load topology for an object and all its children
-function load(hobj::Ptr{Void})
+function load(hobj::hwloc_obj_t)
     @assert hobj != C_NULL
+    obj = unsafe_load(hobj)
+    
     topo = Object()
     
-    htype = int(ccall((:hwloc_get_obj_type, libhwloc_helpers), Cint,
-                      (Ptr{Void},), hobj))
-    @assert htype>=0 && htype<length(obj_types)
-    topo.obj_type = obj_types[htype+1]
+    @assert obj.type_>=0 && obj.type_<length(obj_types)
+    topo.type_ = obj_types[obj.type_+1]
     
-    topo.os_index = int(ccall((:hwloc_get_obj_os_index, libhwloc_helpers),
-                              Cuint, (Ptr{Void},), hobj))
+    topo.os_index = obj.os_index
     
-    cname = ccall((:hwloc_get_obj_name, libhwloc_helpers), Ptr{Cchar},
-                  (Ptr{Void},), hobj)
-    topo.name = cname == C_NULL ? "" : bytestring(cname)
+    topo.name = obj.name == C_NULL ? "" : bytestring(obj.name)
     
-    topo.depth = int(ccall((:hwloc_get_obj_depth, libhwloc_helpers), Cuint,
-                           (Ptr{Void},), hobj))
+    topo.depth = obj.depth
     
-    topo.logical_index = int(ccall((:hwloc_get_obj_logical_index,
-                                    libhwloc_helpers),
-                                   Cuint, (Ptr{Void},), hobj))
+    topo.logical_index = obj.logical_index
     
-    topo.os_level = int(ccall((:hwloc_get_obj_os_level, libhwloc_helpers), Cint,
-                              (Ptr{Void},), hobj))
+    topo.os_level = obj.os_level
     
-    nchildren = int(ccall((:hwloc_get_obj_arity, libhwloc_helpers), Cuint,
-                          (Ptr{Void},), hobj))
-    children = Array(Ptr{Void}, nchildren)
-    hchildren = ccall((:hwloc_get_obj_children, libhwloc_helpers), Ptr{Void},
-                      (Ptr{Void},), hobj)
+    children = Array(hwloc_obj_t, obj.arity)
     ccall(:memcpy, Ptr{Void}, (Ptr{Void}, Ptr{Void}, Csize_t), children,
-          hchildren, nchildren*sizeof(Ptr{Void}))
+          obj.children, obj.arity*sizeof(Ptr{Void}))
     
     for child in children
         @assert child != C_NULL
@@ -131,7 +244,7 @@ end
 function info(obj::Object)
     maxdepth = mapreduce(obj->obj.depth, max, 0, obj)
     types = fill(:Error, maxdepth+1)
-    foldl((_,obj)->(types[obj.depth+1] = obj.obj_type; nothing), nothing, obj)
+    foldl((_,obj)->(types[obj.depth+1] = obj.type_; nothing), nothing, obj)
     counts = fill(0, maxdepth+1)
     foldl((_,obj)->(counts[obj.depth+1] += 1; nothing), nothing, obj)
     return collect(zip(types, counts))
@@ -142,7 +255,7 @@ end
 # Create a histogram
 function hist_map(obj::Object)
     counts = Dict{Symbol,Int}([t=>0 for t in obj_types])
-    foldl((_,obj)->(counts[obj.obj_type]+=1; nothing), nothing, obj)
+    foldl((_,obj)->(counts[obj.type_]+=1; nothing), nothing, obj)
     return counts
 end
 
