@@ -21,6 +21,17 @@ typealias hwloc_obj_cache_type_t Cint
 typealias hwloc_obj_bridge_type_t Cint
 typealias hwloc_obj_osdev_type_t Cint
 
+# Note: The order of these declaration must correspond to then enums
+# in <hwloc.h>
+const obj_types = Symbol[:System, :Machine, :Node, :Socket, :Cache, :Core, :PU,
+                         :Group, :Misc, :Bridge, :PCI_Device, :OS_Device,
+                         :Error]
+const cache_types = Symbol[:Unified, :Data, :Instruction]
+# const bridge_types
+const osdev_types = Symbol[:Block, :GPU, :Network, :Openfabrics, :DMA, :CoProc]
+
+
+
 immutable hwloc_obj_memory_page_type_s
     size::UInt64
     count::UInt64
@@ -104,7 +115,7 @@ immutable hwloc_cache_attr_s
     size::UInt64
     depth::Cuint
     linesize::Cuint
-    assiciativity::Cint
+    associativity::Cint
     type_::hwloc_obj_cache_type_t
 end
 
@@ -134,20 +145,73 @@ end
 
 
 
-# Note: This must correspond to <hwloc.h>
-const obj_types = Symbol[:System, :Machine, :Node, :Socket, :Cache, :Core, :PU,
-                         :Group, :Misc, :Bridge, :PCI_Device, :OS_Device,
-                         :Error]
+abstract Attribute
+
+type NullAttr <: Attribute
+end
+show(io::IO, a::NullAttr) = print(io, "")
+
+type CacheAttr <: Attribute
+    size::Int
+    depth::Int                  # cache level
+    linesize::Int
+    associativity::Int
+    type_::Symbol
+end
+function show(io::IO, a::CacheAttr)
+    print(io, "Cache{size=$(a.size),depth=$(a.depth),linesize=$(a.linesize),",
+          "associativity=$(a.associativity),type=$(string(a.type_))}")
+end
+
+type GroupAttr <: Attribute
+    depth::Int
+end
+function show(io::IO, a::GroupAttr)
+    print(io, "Group{depth=$(a.depth)}")
+end
+
+type PCIDevAttr <: Attribute
+    domain::Int
+    bus::Int
+    dev::Int
+    func::Int
+    class_id::Int
+    vendor_id::Int
+    device_id::Int
+    subvendor_id::Int
+    subdevice_id::Int
+    revision::Int
+    linkspeed::Float32
+end
+# TODO: expand this
+show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
+
+# type BridgeAttr <: Attribute end
+
+type OSDevAttr <: Attribute
+    type_::Symbol
+end
+function show(io::IO, a::OSDevAttr)
+    print(io, "OSDev{type=$(string(a.type_))}")
+end
+
+
 
 type Object
     type_::Symbol
     os_index::Int
     name::ASCIIString
+    attr::Attribute
+    
     depth::Int
     logical_index::Int
     os_level::Int
+    
     children::Vector{Object}
-    Object() = new(:Error, -1, "(nothing)", -1, -1, -1, Object[])
+    
+    Object() = new(:Error, -1, "(nothing)", NullAttr(),
+                   -1, -1, -1,
+                   Object[])
 end
 
 isempty(::Object) = false
@@ -161,12 +225,10 @@ end
 
 length(obj::Object) = mapreduce(x->1, +, obj)
 
-
-
 function show(io::IO, obj::Object)
     println(io, repeat(" ", 4*max(0,obj.depth)), "D$(obj.depth): ",
             "$(string(obj.type_)) ",
-            "L$(obj.logical_index) P$(obj.os_index) $(obj.name)")
+            "L$(obj.logical_index) P$(obj.os_index) $(obj.name) $(obj.attr)")
     for child in obj.children
         show(io, child)
     end
@@ -220,6 +282,8 @@ function load(hobj::hwloc_obj_t)
     
     topo.name = obj.name == C_NULL ? "" : bytestring(obj.name)
     
+    topo.attr = load_attr(obj.attr, topo.type_)
+    
     topo.depth = obj.depth
     
     topo.logical_index = obj.logical_index
@@ -236,6 +300,38 @@ function load(hobj::hwloc_obj_t)
     end
     
     return topo
+end
+
+function load_attr(hattr::Ptr{Void}, type_::Symbol)
+    if type_==:System
+        return NullAttr()
+    elseif type_==:Machine
+        return NullAttr()
+    elseif type_==:Node
+        return NullAttr()
+    elseif type_==:Socket
+        return NullAttr()
+    elseif type_==:Cache
+        ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
+        return CacheAttr(ha.size, ha.depth, ha.linesize, ha.associativity,
+                         cache_types[ha.type_+1])
+    elseif type_==:Core
+        return NullAttr()
+    elseif type_==:PU
+        return NullAttr()
+    elseif type_==:Group
+        error("not implemented")
+    elseif type_==:Misc
+        error("not implemented")
+    elseif type_==:Bridge
+        error("not implemented")
+    elseif type_==:PCI_Device
+        error("not implemented")
+    elseif type_==:OS_Device
+        error("not implemented")
+    else
+        error("Unsupported object type")
+    end
 end
 
 
