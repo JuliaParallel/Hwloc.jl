@@ -78,8 +78,7 @@ function topology_load()
                  (Ptr{Void}, Cuint, Cuint), htopo, 0, 0)
     topo = load(root)
     
-    ierr = ccall((:hwloc_topology_destroy, libhwloc), Cint, (Ptr{Void},), htopo)
-    @assert ierr==0
+    ccall((:hwloc_topology_destroy, libhwloc), Void, (Ptr{Void},), htopo)
     
     return topo
 end
