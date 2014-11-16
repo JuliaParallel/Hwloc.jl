@@ -4,16 +4,20 @@ using Base.Test
 version = hwloc.get_api_version()
 @test isa(version, VersionNumber)
 
+# Topology (complete information)
 topology = hwloc.topology_load()
 println("Topology:")
 print(topology)
 @test isa(topology, hwloc.Object)
 
+# Counts for various object types (e.g. cores)
 counts = hwloc.hist_map(topology)
 println("Histogram map:")
 println(counts)
+@test counts[:core] > 0
 @test counts[:PU] > 0
 
+# Hierarchical summary of topology
 info = hwloc.info(topology)
 println("Info:")
 println(info)
