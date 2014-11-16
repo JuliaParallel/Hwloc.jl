@@ -53,12 +53,12 @@ end
 
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
-    release = version % 256
+    patch = version % 256
     version = version ÷ 256
     minor = version % 256
     version = version ÷ 256
     major = version
-    VersionNumber("$major.$minor.$release")
+    VersionNumber(major, minor, patch)
 end
 
 
