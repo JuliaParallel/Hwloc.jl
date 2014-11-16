@@ -40,8 +40,24 @@ The function `hwloc.info` does this, similar to the output of the
 ```
 import hwloc
 topology = hwloc.topology_load()
-summary = hwloc.summary(topology)
-ncores = Dict(summary)[:Core]
-npus = Dict(summary)[:PU]
+counts = hwloc.hist_map(topology)
+ncores = counts[:Core]
+npus = counts[:PU]
 println("This machine has $ncores cores and $npus PUs (processing units)")
+```
+
+Often, one only wants an overview of the topology, omitting details.
+The function `hwloc.info` does this, similar to the output of the
+`hwloc-info` program.
+
+```
+import hwloc
+topology = hwloc.topology_load()
+summary = hwloc.info(topology)
+println("Machine overview:")
+for obj in summary
+    obj_type = obj[1]
+    count = obj[2]
+    println("$count $obj_type")
+end
 ```
