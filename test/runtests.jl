@@ -5,13 +5,18 @@ version = hwloc.get_api_version()
 @test isa(version, VersionNumber)
 
 topology = hwloc.topology_load()
+println("Topology:")
+print(topology)
 @test isa(topology, hwloc.Object)
 
 types, counts = hwloc.hist(topology)
-# Dict{Symbol,Int}(zip(types, counts))
+println("Histogram:")
+println(Dict{Symbol,Int}(zip(types, counts)))
 @test counts[findfirst(types, :PU)] > 0
 
 info = hwloc.info(topology)
+println("Info:")
+println(info)
 @test info[1][1] ∈ (:System, :Machine)
 @test info[1][2] == 1
 @test info[end][1] == :PU
