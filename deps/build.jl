@@ -32,8 +32,8 @@ provides(BuildProcess, Dict(Autotools(libtarget="src/libhwloc.la",
 srcdir = joinpath(BinDeps.depsdir(libhwloc_helpers), "src", "libhwloc_helpers")
 provides(SimpleBuild,
          (@build_steps begin
-             MakeTargets(srcdir, ["all", "HWLOC_DIR=$(destdir)"])
-             MakeTargets(srcdir, ["install", "PREFIX=$(destdir)"])
+             MakeTargets(srcdir, ["install", "HWLOC_DIR=$(destdir)",
+                                  "PREFIX=$(destdir)"])
           end),
          libhwloc_helpers)
 
