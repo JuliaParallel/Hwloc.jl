@@ -7,7 +7,7 @@ import Base: hist
 using BinDeps
 include("../deps/deps.jl")
 
-export get_api_version, topology_load, hist, info
+export get_api_version, topology_load, info, hist_map, hist
 
 
 
@@ -141,12 +141,14 @@ end
 
 
 # Create a histogram
-function hist(obj::Object)
-    counts = Dict{Symbol,Int}()
-    for obj_type in obj_types
-        counts[obj_type] = 0
-    end
+function hist_map(obj::Object)
+    counts = Dict{Symbol,Int}([t=>0 for t in obj_types])
     foldl((_,obj)->(counts[obj.obj_type]+=1; nothing), nothing, obj)
+    return counts
+end
+
+function hist(obj::Object)
+    counts = hist_map(obj)
     return obj_types, [counts[t] for t in obj_types]
 end
 
