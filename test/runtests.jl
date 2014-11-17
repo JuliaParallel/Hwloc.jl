@@ -14,7 +14,7 @@ print(topology)
 counts = hwloc.hist_map(topology)
 println("Histogram map:")
 println(counts)
-@test counts[:core] > 0
+@test counts[:Core] > 0
 @test counts[:PU] > 0
 
 # Hierarchical summary of topology
