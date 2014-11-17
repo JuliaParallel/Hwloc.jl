@@ -226,9 +226,9 @@ end
 length(obj::Object) = mapreduce(x->1, +, obj)
 
 function show(io::IO, obj::Object)
-    println(io, repeat(" ", 4*max(0,obj.depth)), "D$(obj.depth): ",
-            "$(string(obj.type_)) ",
-            "L$(obj.logical_index) P$(obj.os_index) $(obj.name) $(obj.attr)")
+    println(io, repeat(" ", 4*max(0,obj.depth)),
+            "D$(obj.depth): L$(obj.logical_index) P$(obj.os_index) ",
+            "$(string(obj.type_)) $(obj.name) $(obj.attr)")
     for child in obj.children
         show(io, child)
     end
