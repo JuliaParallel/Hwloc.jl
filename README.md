@@ -33,17 +33,31 @@ println("Machine topology:")
 print(topology)
 ```
 
-Often, one only wants an overview of the topology, omitting details.
-The function `hwloc.info` does this, similar to the output of the
-`hwloc-info` program.
-
+This outputs the full information, such as:
 ```
-import hwloc
-topology = hwloc.topology_load()
-counts = hwloc.hist_map(topology)
-ncores = counts[:Core]
-npus = counts[:PU]
-println("This machine has $ncores cores and $npus PUs (processing units)")
+D0: L0 P0 Machine  
+    D1: L0 P0 Node  
+        D2: L0 P0 Cache  Cache{size=8388608,depth=3,linesize=64,associativity=0,type=Unified}
+            D3: L0 P0 Cache  Cache{size=262144,depth=2,linesize=64,associativity=8,type=Unified}
+                D4: L0 P0 Cache  Cache{size=32768,depth=1,linesize=64,associativity=0,type=Data}
+                    D5: L0 P0 Core  
+                        D6: L0 P0 PU  
+                        D6: L1 P1 PU  
+            D3: L1 P1 Cache  Cache{size=262144,depth=2,linesize=64,associativity=8,type=Unified}
+                D4: L1 P1 Cache  Cache{size=32768,depth=1,linesize=64,associativity=0,type=Data}
+                    D5: L1 P1 Core  
+                        D6: L2 P2 PU  
+                        D6: L3 P3 PU  
+            D3: L2 P2 Cache  Cache{size=262144,depth=2,linesize=64,associativity=8,type=Unified}
+                D4: L2 P2 Cache  Cache{size=32768,depth=1,linesize=64,associativity=0,type=Data}
+                    D5: L2 P2 Core  
+                        D6: L4 P4 PU  
+                        D6: L5 P5 PU  
+            D3: L3 P3 Cache  Cache{size=262144,depth=2,linesize=64,associativity=8,type=Unified}
+                D4: L3 P3 Cache  Cache{size=32768,depth=1,linesize=64,associativity=0,type=Data}
+                    D5: L3 P3 Core  
+                        D6: L6 P6 PU  
+                        D6: L7 P7 PU  
 ```
 
 Often, one only wants an overview of the topology, omitting details.
@@ -60,4 +74,47 @@ for obj in summary
     count = obj[2]
     println("$count $obj_type")
 end
+```
+
+This may output:
+```
+1 Machine
+1 Node
+1 Cache
+4 Cache
+4 Cache
+4 Core
+8 PU
+```
+
+## Obtaining particular information:
+
+The number of cores and virtual cores (PUs):
+
+```
+import hwloc
+topology = hwloc.topology_load()
+counts = hwloc.hist_map(topology)
+ncores = counts[:Core]
+npus = counts[:PU]
+println("This machine has $ncores cores and $npus PUs (processing units)")
+```
+
+This may print:
+```
+This machine has 4 cores and 8 PUs (processing units)
+```
+
+The L1 cache properties:
+
+```
+import hwloc
+topology = hwloc.topology_load()
+l1cache = first(filter(t->t.type_==:Cache && t.attr.depth==1, topology)).attr
+println("L1 cache information: $l1cache")
+```
+
+This may print:
+```
+L1 cache information: Cache{size=32768,depth=1,linesize=64,associativity=0,type=Data}
 ```
