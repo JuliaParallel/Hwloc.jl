@@ -1,4 +1,4 @@
-# Portable Hardware Locality (hwloc)
+# Portable Hardware Locality (Hwloc)
 
 This Julia package wraps the hwloc library.
 
@@ -16,19 +16,19 @@ http://www.open-mpi.org/projects/hwloc/
 
 # Usage
 
-The Julia module hwloc provides a high-level wrapper of the hwloc
+The Julia module Hwloc provides a high-level wrapper of the hwloc
 library; that is, hwloc's data structure are translated into Julia
 types that contain the same information, but are modified to look
 "natural" in Julia. Low-level administrative tasks are hidden.
 
-The most important function is `hwloc.topology_load`, which examines
+The most important function is `Hwloc.topology_load`, which examines
 the current node's hardware topology (memories, caches, cores, etc.),
 and returns a tree structure describing this topology. This
 corresponds to the output of the `lstopo` program.
 
 ```
-import hwloc
-topology = hwloc.topology_load()
+import Hwloc
+topology = Hwloc.topology_load()
 println("Machine topology:")
 print(topology)
 ```
@@ -61,13 +61,13 @@ D0: L0 P0 Machine
 ```
 
 Often, one only wants an overview of the topology, omitting details.
-The function `hwloc.info` does this, similar to the output of the
+The function `Hwloc.info` does this, similar to the output of the
 `hwloc-info` program.
 
 ```
-import hwloc
-topology = hwloc.topology_load()
-summary = hwloc.info(topology)
+import Hwloc
+topology = Hwloc.topology_load()
+summary = Hwloc.info(topology)
 println("Machine overview:")
 for obj in summary
     obj_type = obj[1]
@@ -92,9 +92,9 @@ This may output:
 The number of cores and virtual cores (PUs):
 
 ```
-import hwloc
-topology = hwloc.topology_load()
-counts = hwloc.hist_map(topology)
+import Hwloc
+topology = Hwloc.topology_load()
+counts = Hwloc.hist_map(topology)
 ncores = counts[:Core]
 npus = counts[:PU]
 println("This machine has $ncores cores and $npus PUs (processing units)")
@@ -108,8 +108,8 @@ This machine has 4 cores and 8 PUs (processing units)
 The L1 cache properties:
 
 ```
-import hwloc
-topology = hwloc.topology_load()
+import Hwloc
+topology = Hwloc.topology_load()
 l1cache = first(filter(t->t.type_==:Cache && t.attr.depth==1, topology)).attr
 println("L1 cache information: $l1cache")
 ```

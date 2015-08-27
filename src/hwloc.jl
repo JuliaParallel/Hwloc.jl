@@ -1,4 +1,4 @@
-module hwloc
+module Hwloc
 
 import Base: isempty, start, done, next, length
 import Base: show
@@ -256,7 +256,7 @@ function topology_load()
     ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Void},), htopo)
     @assert ierr==0
     
-    nroots = int(ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cuint,
+    nroots = Int(ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cuint,
                        (Ptr{Void}, Cuint), htopo, 0))
     @assert nroots == 1
     root = ccall((:hwloc_get_obj_by_depth, libhwloc), hwloc_obj_t,
