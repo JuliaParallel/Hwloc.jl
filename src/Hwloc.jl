@@ -5,7 +5,7 @@ module Hwloc
 import Base: isempty, start, done, next, length
 import Base: show
 
-if isfile(joinpath(dirname(dirname(@__FILE__)),"deps","deps.jl"))
+if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
     include("../deps/deps.jl")
 else
     error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
