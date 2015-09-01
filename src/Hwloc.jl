@@ -1,10 +1,15 @@
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module Hwloc
 
 import Base: isempty, start, done, next, length
 import Base: show
 
-using BinDeps
-include("../deps/deps.jl")
+if isfile(joinpath(dirname(dirname(@__FILE__)),"deps","deps.jl"))
+    include("../deps/deps.jl")
+else
+    error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
+end
 
 export get_api_version, topology_load, info, hist_map
 
