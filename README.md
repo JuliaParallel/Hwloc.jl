@@ -14,6 +14,8 @@ hardware so as to exploit it accordingly and efficiently.
 
 http://www.open-mpi.org/projects/hwloc/
 
+[![Build Status](https://travis-ci.org/JuliaParallel/Hwloc.jl.svg?branch=master)](https://travis-ci.org/JuliaParallel/Hwloc.jl)
+
 # Usage
 
 The Julia module Hwloc provides a high-level wrapper of the hwloc
