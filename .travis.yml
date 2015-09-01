@@ -1,18 +1,15 @@
-language: cpp
-compiler:
-  - clang
+language: julia
+os:
+  - linux
+  - osx
+julia:
+  - release
+  - nightly
 notifications:
   email: false
-env:
-  matrix:
-    - JULIAVERSION="juliareleases"
-    - JULIAVERSION="julianightlies"
-before_install:
-  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
-  - sudo apt-get update -qq -y
-  - sudo apt-get install libpcre3-dev julia -y
-  # - sudo apt-get install libhwloc-dev julia -y
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 script:
-  - julia -e 'versioninfo(); Pkg.init(); Pkg.clone(pwd()); Pkg.build("Hwloc"); Pkg.test("Hwloc")'
+  - if [ -e .git/shallow ]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("Hwloc")'
+  - julia -e 'Pkg.test("Hwloc")'
+after_success:
+  - if [ $TRAVIS_JULIA_VERSION = "nightly" ]; then julia -e 'Pkg.add("Coverage"); cd(Pkg.dir("Hwloc")); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
