@@ -1,4 +1,4 @@
-import Hwloc
+using Hwloc
 using Base.Test
 
 version = Hwloc.get_api_version()

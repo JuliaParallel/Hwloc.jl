@@ -10,6 +10,6 @@ notifications:
 script:
   - if [ -e .git/shallow ]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd()); Pkg.build("Hwloc")'
-  - julia -e 'Pkg.test("Hwloc")'
+  - julia -e 'Pkg.test("Hwloc", coverage=true)'
 after_success:
-  - if [ $TRAVIS_JULIA_VERSION = "nightly" ]; then julia -e 'Pkg.add("Coverage"); using Coverage; cd(Pkg.dir("Hwloc")); Coveralls.submit(Coveralls.process_folder())'; fi
+  - if [ $TRAVIS_JULIA_VERSION = "nightly" ]; then julia -e 'cd(Pkg.dir("Hwloc")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
