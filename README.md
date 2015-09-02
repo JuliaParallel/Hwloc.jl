@@ -1,5 +1,8 @@
 # Portable Hardware Locality (Hwloc)
 
+[![Build Status](https://travis-ci.org/JuliaParallel/Hwloc.jl.svg?branch=master)](https://travis-ci.org/JuliaParallel/Hwloc.jl)
+[![Coverage Status](https://coveralls.io/repos/JuliaParallel/Hwloc.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaParallel/Hwloc.jl?branch=master)
+
 This Julia package wraps the hwloc library.
 
 The Portable Hardware Locality (hwloc) software package provides a
@@ -13,10 +16,6 @@ applications with gathering information about modern computing
 hardware so as to exploit it accordingly and efficiently.
 
 http://www.open-mpi.org/projects/hwloc/
-
-Travis: [![Build Status](https://travis-ci.org/JuliaParallel/Hwloc.jl.svg?branch=master)](https://travis-ci.org/JuliaParallel/Hwloc.jl)
-
-Coveralls: [![Coverage Status](https://coveralls.io/repos/JuliaParallel/Hwloc.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaParallel/Hwloc.jl?branch=master)
 
 # Usage
 
