@@ -1,5 +1,5 @@
 @osx Homebrew
-@windows WinRPM
+# @windows WinRPM
 BinDeps
 Compat 0.4.11
 julia 0.4-

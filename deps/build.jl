@@ -14,14 +14,16 @@ end
     provides(Homebrew.HB, "hwloc", libhwloc)
 end
 
-@windows_only begin
-    using WinRPM
-    provides(WinRPM.RPM, "hwloc", libhwloc)
-end
+# @windows_only begin
+#     using WinRPM
+#     provides(WinRPM.RPM, "hwloc", libhwloc)
+# end
 
 # Build from source
 provides(Sources,
-         @compat Dict(URI("http://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-1.11.0.tar.gz") => libhwloc))
+         @compat Dict(URI("http://www.open-mpi.org/software/" *
+                          "hwloc/v1.11/downloads/hwloc-1.11.0.tar.gz") =>
+                      libhwloc))
 provides(BuildProcess,
          @compat Dict(Autotools(libtarget="src/libhwloc.la",
                                 configure_options=["--without-x"]) => libhwloc))
