@@ -14,6 +14,9 @@ end
     provides(Homebrew.HB, "hwloc", libhwloc)
 end
 
+provides(Binaries, URI("http://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-win$WORD_SIZE-build-1.11.0.zip"),
+    [libhwloc], unpacked_dir="bin", os = :Windows)
+
 # Build from source
 provides(Sources,
          @compat Dict(URI("http://www.open-mpi.org/software/" *
