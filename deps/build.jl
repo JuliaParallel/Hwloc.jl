@@ -1,7 +1,7 @@
 using BinDeps, Compat
 @BinDeps.setup
 
-libhwloc = library_dependency("libhwloc")
+libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5"])
 
 # Install via a package manager
 @linux_only begin
