@@ -261,8 +261,11 @@ function topology_load()
     ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Void},), htopo)
     @assert ierr==0
     
-    nroots = Int(ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cuint,
-                       (Ptr{Void}, Cuint), htopo, 0))
+    depth = ccall((:hwloc_topology_get_depth, libhwloc), Cuint, (Ptr{Void},),
+                  htopo)
+    @assert depth >= 1
+    nroots = ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cuint,
+                   (Ptr{Void}, Cuint), htopo, 0)
     @assert nroots == 1
     root = ccall((:hwloc_get_obj_by_depth, libhwloc), hwloc_obj_t,
                  (Ptr{Void}, Cuint, Cuint), htopo, 0, 0)
