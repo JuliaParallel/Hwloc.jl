@@ -65,13 +65,13 @@ D0: L0 P0 Machine
 ```
 
 Often, one only wants an overview of the topology, omitting details.
-The function `Hwloc.info` does this, similar to the output of the
+The function `Hwloc.getinfo` does this, similar to the output of the
 `hwloc-info` program.
 
 ```
 import Hwloc
 topology = Hwloc.topology_load()
-summary = Hwloc.info(topology)
+summary = Hwloc.getinfo(topology)
 println("Machine overview:")
 for obj in summary
     obj_type = obj[1]
@@ -98,7 +98,7 @@ The number of cores and virtual cores (PUs):
 ```
 import Hwloc
 topology = Hwloc.topology_load()
-counts = Hwloc.hist_map(topology)
+counts = Hwloc.histmap(topology)
 ncores = counts[:Core]
 npus = counts[:PU]
 println("This machine has $ncores cores and $npus PUs (processing units)")
