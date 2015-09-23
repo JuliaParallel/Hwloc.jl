@@ -286,7 +286,7 @@ function load(hobj::hwloc_obj_t)
     @assert obj.type_>=0 && obj.type_<length(obj_types)
     topo.type_ = obj_types[obj.type_+1]
     
-    topo.os_index = obj.os_index
+    topo.os_index = mod(obj.os_index, Cint)
     
     topo.name = obj.name == C_NULL ? "" : bytestring(obj.name)
     
