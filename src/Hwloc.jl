@@ -11,7 +11,7 @@ else
     error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
 end
 
-export get_api_version, topology_load, info, hist_map
+export get_api_version, topology_load, getinfo, histmap
 
 
 
@@ -286,7 +286,7 @@ function load(hobj::hwloc_obj_t)
     @assert obj.type_>=0 && obj.type_<length(obj_types)
     topo.type_ = obj_types[obj.type_+1]
     
-    topo.os_index = obj.os_index
+    topo.os_index = mod(obj.os_index, Cint)
     
     topo.name = obj.name == C_NULL ? "" : bytestring(obj.name)
     
@@ -345,7 +345,7 @@ end
 
 
 # Condense information similar to hwloc-info
-function info(obj::Object)
+function getinfo(obj::Object)
     maxdepth = mapreduce(obj->obj.depth, max, 0, obj)
     types = fill(:Error, maxdepth+1)
     foldl((_,obj)->(types[obj.depth+1] = obj.type_; nothing), nothing, obj)
@@ -357,7 +357,7 @@ end
 
 
 # Create a histogram
-function hist_map(obj::Object)
+function histmap(obj::Object)
     counts = Dict{Symbol,Int}([t=>0 for t in obj_types])
     foldl((_,obj)->(counts[obj.type_]+=1; nothing), nothing, obj)
     return counts
