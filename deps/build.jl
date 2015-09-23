@@ -1,7 +1,7 @@
 using BinDeps, Compat
 @BinDeps.setup
 
-libhwloc = library_dependency("libhwloc")
+libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5"])
 
 # Install via a package manager
 @linux_only begin
@@ -13,6 +13,9 @@ end
     using Homebrew
     provides(Homebrew.HB, "hwloc", libhwloc)
 end
+
+provides(Binaries, URI("http://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-win$WORD_SIZE-build-1.11.0.zip"),
+    [libhwloc], unpacked_dir="hwloc-win$WORD_SIZE-build-1.11.0/bin", os = :Windows)
 
 # Build from source
 provides(Sources,
