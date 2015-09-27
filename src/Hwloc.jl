@@ -205,7 +205,7 @@ end
 type Object
     type_::Symbol
     os_index::Int
-    name::ASCIIString
+    name::UTF8String
     attr::Attribute
     
     depth::Int
