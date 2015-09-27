@@ -38,13 +38,13 @@ const osdev_types = Symbol[:Block, :GPU, :Network, :Openfabrics, :DMA, :CoProc]
 
 
 immutable hwloc_obj_memory_page_type_s
-    size::Uint64
-    count::Uint64
+    size::Culonglong
+    count::Culonglong
 end
 
 immutable hwloc_obj_memory_s
-    total_memory::Uint64
-    local_memory::Uint64
+    total_memory::Culonglong
+    local_memory::Culonglong
     page_types_len::Cuint
     page_types::Ptr{hwloc_obj_memory_page_type_s}
 end
@@ -117,7 +117,7 @@ end
 typealias hwloc_obj_t Ptr{hwloc_obj}
 
 immutable hwloc_cache_attr_s
-    size::Uint64
+    size::Culonglong
     depth::Cuint
     linesize::Cuint
     associativity::Cint
