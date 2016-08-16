@@ -4,23 +4,28 @@ using BinDeps, Compat
 libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5"])
 
 # Install via a package manager
-@linux_only begin
+@static if is_linux()
     provides(AptGet, "libhwloc-dev", libhwloc)
     provides(Yum, "hwloc-devel", libhwloc)
 end
 
-@osx_only begin
-    using Homebrew
-    provides(Homebrew.HB, "hwloc", libhwloc)
-end
+# Julia's Homebrew does not actually provide Hwloc
+# @static if is_apple()
+#     using Homebrew
+#     provides(Homebrew.HB, "hwloc", libhwloc)
+# end
 
-provides(Binaries, URI("http://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-win$WORD_SIZE-build-1.11.0.zip"),
-    [libhwloc], unpacked_dir="hwloc-win$WORD_SIZE-build-1.11.0/bin", os = :Windows)
+provides(Binaries,
+         URI("http://www.open-mpi.org/software/hwloc/" *
+             "v1.11/downloads/hwloc-win$(Sys.WORD_SIZE)-build-1.11.3.zip"),
+         [libhwloc],
+         unpacked_dir="hwloc-win$(Sys.WORD_SIZE)-build-1.11.3/bin",
+         os = :Windows)
 
 # Build from source
 provides(Sources,
-         @compat Dict(URI("http://www.open-mpi.org/software/" *
-                          "hwloc/v1.11/downloads/hwloc-1.11.0.tar.gz") =>
+         @compat Dict(URI("http://www.open-mpi.org/software/hwloc/" *
+                          "v1.11/downloads/hwloc-1.11.3.tar.gz") =>
                       libhwloc))
 provides(BuildProcess,
          @compat Dict(Autotools(libtarget="src/libhwloc.la",
