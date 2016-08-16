@@ -358,7 +358,7 @@ end
 
 # Create a histogram
 function histmap(obj::Object)
-    counts = Dict{Symbol,Int}([t=>0 for t in obj_types])
+    counts = Dict{Symbol,Int}([(t, 0) for t in obj_types])
     foldl((_,obj)->(counts[obj.type_]+=1; nothing), nothing, obj)
     return counts
 end
