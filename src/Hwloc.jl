@@ -2,6 +2,8 @@ VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
 module Hwloc
 
+using Compat
+
 import Base: isempty, start, done, next, length
 import Base: show
 
@@ -205,7 +207,7 @@ end
 type Object
     type_::Symbol
     os_index::Int
-    name::UTF8String
+    name::Compat.UTF8String
     attr::Attribute
     
     depth::Int
@@ -288,7 +290,7 @@ function load(hobj::hwloc_obj_t)
     
     topo.os_index = mod(obj.os_index, Cint)
     
-    topo.name = obj.name == C_NULL ? "" : bytestring(obj.name)
+    topo.name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
     
     topo.attr = load_attr(obj.attr, topo.type_)
     
