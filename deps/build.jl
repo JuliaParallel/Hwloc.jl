@@ -9,11 +9,10 @@ libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5"])
     provides(Yum, "hwloc-devel", libhwloc)
 end
 
-# Julia's Homebrew does not actually provide Hwloc
-# @static if is_apple()
-#     using Homebrew
-#     provides(Homebrew.HB, "hwloc", libhwloc)
-# end
+@static if is_apple()
+    using Homebrew
+    provides(Homebrew.HB, "homebrew/science/hwloc", libhwloc)
+end
 
 provides(Binaries,
          URI("http://www.open-mpi.org/software/hwloc/" *
