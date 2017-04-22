@@ -19,14 +19,14 @@ export get_api_version, topology_load, getinfo, histmap
 
 # Note: These must correspond to <hwloc.h>
 
-typealias hwloc_bitmap_t Ptr{Void}
-typealias hwloc_cpuset_t hwloc_bitmap_t
-typealias hwloc_nodeset_t hwloc_bitmap_t
+const hwloc_bitmap_t = Ptr{Void}
+const hwloc_cpuset_t = hwloc_bitmap_t
+const hwloc_nodeset_t = hwloc_bitmap_t
 
-typealias hwloc_obj_type_t Cint
-typealias hwloc_obj_cache_type_t Cint
-typealias hwloc_obj_bridge_type_t Cint
-typealias hwloc_obj_osdev_type_t Cint
+const hwloc_obj_type_t = Cint
+const hwloc_obj_cache_type_t = Cint
+const hwloc_obj_bridge_type_t = Cint
+const hwloc_obj_osdev_type_t = Cint
 
 # Note: The order of these declaration must correspond to then enums
 # in <hwloc.h>
@@ -71,31 +71,31 @@ immutable hwloc_obj
     name::Ptr{Cchar}
     memory::hwloc_obj_memory_s
     attr::Ptr{Void}             # Ptr{hwloc_obj_attr_u}
-    
+
     # global position
     depth::Cuint
     logical_index::Cuint
     os_level::Cint
-    
+
     # cousins
     next_cousin::Ptr{hwloc_obj}
     prev_cousin::Ptr{hwloc_obj}
-    
+
     # siblings
     parent::Ptr{hwloc_obj}
     sibling_rank::Cuint
     next_sibling::Ptr{hwloc_obj}
     prev_sibling::Ptr{hwloc_obj}
-    
+
     # children
     arity::Cuint
     children::Ptr{Ptr{hwloc_obj}}
     first_child::Ptr{hwloc_obj}
     last_child::Ptr{hwloc_obj}
-    
+
     # misc
     userdata::Ptr{Void}
-    
+
     # cpusets and nodesets
     cpuset::hwloc_cpuset_t
     complete_cpuset::hwloc_cpuset_t
@@ -104,19 +104,19 @@ immutable hwloc_obj
     nodeset::hwloc_nodeset_t
     complete_nodeset::hwloc_nodeset_t
     allowed_nodeset::hwloc_nodeset_t
-    
+
     # distances
     distances::Ptr{Ptr{hwloc_distances_s}}
     distances_count::Cuint
-    
+
     # infos
     infos::Ptr{hwloc_obj_info_s}
     infos_count::Cuint
-    
+
     # symmetry
     symmetric_subtree::Cint
 end
-typealias hwloc_obj_t Ptr{hwloc_obj}
+const hwloc_obj_t = Ptr{hwloc_obj}
 
 immutable hwloc_cache_attr_s
     size::Culonglong
@@ -152,7 +152,7 @@ end
 
 
 
-abstract Attribute
+@compat abstract type Attribute end
 
 type NullAttr <: Attribute
 end
@@ -209,13 +209,13 @@ type Object
     os_index::Int
     name::Compat.UTF8String
     attr::Attribute
-    
+
     depth::Int
     logical_index::Int
     os_level::Int
-    
+
     children::Vector{Object}
-    
+
     Object() = new(:Error, -1, "(nothing)", NullAttr(),
                    -1, -1, -1,
                    Object[])
@@ -256,13 +256,13 @@ end
 
 
 function topology_load()
-    htopop = Array(Ptr{Void}, 1)
+    htopop = Ref{Ptr{Void}}()
     ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Void},), htopop)
     @assert ierr==0
-    htopo = htopop[1]
+    htopo = htopop[]
     ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Void},), htopo)
     @assert ierr==0
-    
+
     depth = ccall((:hwloc_topology_get_depth, libhwloc), Cint, (Ptr{Void},),
                   htopo)
     @assert depth >= 1
@@ -272,9 +272,9 @@ function topology_load()
     root = ccall((:hwloc_get_obj_by_depth, libhwloc), hwloc_obj_t,
                  (Ptr{Void}, Cuint, Cuint), htopo, 0, 0)
     topo = load(root)
-    
+
     ccall((:hwloc_topology_destroy, libhwloc), Void, (Ptr{Void},), htopo)
-    
+
     return topo
 end
 
@@ -282,33 +282,33 @@ end
 function load(hobj::hwloc_obj_t)
     @assert hobj != C_NULL
     obj = unsafe_load(hobj)
-    
+
     topo = Object()
-    
+
     @assert obj.type_>=0 && obj.type_<length(obj_types)
     topo.type_ = obj_types[obj.type_+1]
-    
+
     topo.os_index = mod(obj.os_index, Cint)
-    
+
     topo.name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
-    
+
     topo.attr = load_attr(obj.attr, topo.type_)
-    
+
     topo.depth = obj.depth
-    
+
     topo.logical_index = obj.logical_index
-    
+
     topo.os_level = obj.os_level
-    
-    children = Array(hwloc_obj_t, obj.arity)
+
+    children = Vector{hwloc_obj_t}(obj.arity)
     ccall(:memcpy, Ptr{Void}, (Ptr{Void}, Ptr{Void}, Csize_t), children,
           obj.children, obj.arity*sizeof(Ptr{Void}))
-    
+
     for child in children
         @assert child != C_NULL
         push!(topo.children, load(child))
     end
-    
+
     return topo
 end
 
