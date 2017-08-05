@@ -207,7 +207,7 @@ end
 type Object
     type_::Symbol
     os_index::Int
-    name::Compat.UTF8String
+    name::Compat.String
     attr::Attribute
 
     depth::Int
