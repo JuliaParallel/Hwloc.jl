@@ -11,7 +11,7 @@ end
 
 @static if is_apple()
     using Homebrew
-    provides(Homebrew.HB, "homebrew/science/hwloc", libhwloc)
+    provides(Homebrew.HB, "hwloc", libhwloc)
 end
 
 provides(Binaries,
