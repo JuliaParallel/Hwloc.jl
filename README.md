@@ -93,7 +93,7 @@ This may output:
 
 ## Obtaining particular information:
 
-The number of cores and virtual cores (PUs):
+The number of (physical) cores and virtual cores (PUs):
 
 ```
 import Hwloc
@@ -107,6 +107,13 @@ println("This machine has $ncores cores and $npus PUs (processing units)")
 This may print:
 ```
 This machine has 4 cores and 8 PUs (processing units)
+```
+
+A shortcut is also provided for the number of (physical) cores:
+
+```
+import Hwloc
+ncores = Hwloc.cpu_physical_cores()
 ```
 
 The L1 cache properties:
