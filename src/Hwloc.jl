@@ -13,7 +13,7 @@ else
     error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
 end
 
-export get_api_version, topology_load, getinfo, histmap
+export get_api_version, topology_load, getinfo, histmap, cpu_physical_cores
 
 
 
@@ -363,6 +363,12 @@ function histmap(obj::Object)
     counts = Dict{Symbol,Int}([(t, 0) for t in obj_types])
     foldl((_,obj)->(counts[obj.type_]+=1; nothing), nothing, obj)
     return counts
+end
+
+# Wrappers for commonly queried info
+function cpu_physical_cores()
+  topo = topology_load()
+  histmap(topo)[:Core]
 end
 
 end
