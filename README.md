@@ -113,7 +113,7 @@ A shortcut is also provided for the number of (physical) cores:
 
 ```
 import Hwloc
-ncores = Hwloc.cpu_physical_cores()
+ncores = Hwloc.num_physical_cores()
 ```
 
 The L1 cache properties:
