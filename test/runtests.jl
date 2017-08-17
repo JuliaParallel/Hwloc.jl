@@ -16,6 +16,7 @@ println("Histogram map:")
 println(counts)
 @test counts[:Core] > 0
 @test counts[:PU] > 0
+@test num_physical_cores() == counts[:Core]
 
 # Hierarchical summary of topology
 hinfo = Hwloc.getinfo(topology)
