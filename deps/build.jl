@@ -23,11 +23,11 @@ provides(Binaries,
 
 # Build from source
 provides(Sources,
-         @compat Dict(URI("http://www.open-mpi.org/software/hwloc/" *
+         Dict(URI("http://www.open-mpi.org/software/hwloc/" *
                           "v1.11/downloads/hwloc-1.11.3.tar.gz") =>
                       libhwloc))
 provides(BuildProcess,
-         @compat Dict(Autotools(libtarget="src/libhwloc.la",
+         Dict(Autotools(libtarget="src/libhwloc.la",
                                 configure_options=["--without-x"]) => libhwloc))
 
-@compat @BinDeps.install Dict(:libhwloc => :libhwloc)
+@BinDeps.install Dict(:libhwloc => :libhwloc)
