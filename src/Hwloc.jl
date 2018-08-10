@@ -39,19 +39,19 @@ const osdev_types = Symbol[:Block, :GPU, :Network, :Openfabrics, :DMA, :CoProc]
 
 
 
-immutable hwloc_obj_memory_page_type_s
+struct hwloc_obj_memory_page_type_s
     size::Culonglong
     count::Culonglong
 end
 
-immutable hwloc_obj_memory_s
+struct hwloc_obj_memory_s
     total_memory::Culonglong
     local_memory::Culonglong
     page_types_len::Cuint
     page_types::Ptr{hwloc_obj_memory_page_type_s}
 end
 
-immutable hwloc_distances_s
+struct hwloc_distances_s
     relative_depth::Cuint
     nbobjs::Cuint
     latency::Ptr{Cfloat}
@@ -59,12 +59,12 @@ immutable hwloc_distances_s
     latency_base::Cfloat
 end
 
-immutable hwloc_obj_info_s
+struct hwloc_obj_info_s
     name::Ptr{Cchar}
     value::Ptr{Cchar}
 end
 
-immutable hwloc_obj
+struct hwloc_obj
     # physical information
     type_::hwloc_obj_type_t
     os_index::Cuint
@@ -118,7 +118,7 @@ immutable hwloc_obj
 end
 const hwloc_obj_t = Ptr{hwloc_obj}
 
-immutable hwloc_cache_attr_s
+struct hwloc_cache_attr_s
     size::Culonglong
     depth::Cuint
     linesize::Cuint
@@ -126,11 +126,11 @@ immutable hwloc_cache_attr_s
     type_::hwloc_obj_cache_type_t
 end
 
-immutable hwloc_group_attr_s
+struct hwloc_group_attr_s
     depth::Cuint
 end
 
-immutable hwloc_pcidev_attr_s
+struct hwloc_pcidev_attr_s
     domain::Cushort
     bus::Cuchar
     dev::Cuchar
@@ -146,7 +146,7 @@ end
 
 # hwloc_bridge_attr_s
 
-immutable hwloc_osdev_attr_s
+struct hwloc_osdev_attr_s
     type_::hwloc_obj_osdev_type_t
 end
 
@@ -154,11 +154,11 @@ end
 
 @compat abstract type Attribute end
 
-type NullAttr <: Attribute
+mutable struct NullAttr <: Attribute
 end
 show(io::IO, a::NullAttr) = print(io, "")
 
-type CacheAttr <: Attribute
+mutable struct CacheAttr <: Attribute
     size::Int
     depth::Int                  # cache level
     linesize::Int
@@ -170,14 +170,14 @@ function show(io::IO, a::CacheAttr)
           "associativity=$(a.associativity),type=$(string(a.type_))}")
 end
 
-type GroupAttr <: Attribute
+mutable struct GroupAttr <: Attribute
     depth::Int
 end
 function show(io::IO, a::GroupAttr)
     print(io, "Group{depth=$(a.depth)}")
 end
 
-type PCIDevAttr <: Attribute
+mutable struct PCIDevAttr <: Attribute
     domain::Int
     bus::Int
     dev::Int
@@ -195,7 +195,7 @@ show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
 
 # type BridgeAttr <: Attribute end
 
-type OSDevAttr <: Attribute
+mutable struct OSDevAttr <: Attribute
     type_::Symbol
 end
 function show(io::IO, a::OSDevAttr)
@@ -204,7 +204,7 @@ end
 
 
 
-type Object
+mutable struct Object
     type_::Symbol
     os_index::Int
     name::Compat.String

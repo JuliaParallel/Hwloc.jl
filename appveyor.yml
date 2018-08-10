@@ -2,6 +2,10 @@ environment:
   matrix:
     - JULIAVERSION: "julialang/bin/winnt/x86/0.5/julia-0.5-latest-win32.exe"
     - JULIAVERSION: "julialang/bin/winnt/x64/0.5/julia-0.5-latest-win64.exe"
+    - JULIAVERSION: "julialang/bin/winnt/x86/0.6/julia-0.6-latest-win32.exe"
+    - JULIAVERSION: "julialang/bin/winnt/x64/0.6/julia-0.6-latest-win64.exe"
+    - JULIAVERSION: "julialang/bin/winnt/x86/1.0/julia-1.0-latest-win32.exe"
+    - JULIAVERSION: "julialang/bin/winnt/x64/1.0/julia-1.0-latest-win64.exe"
     - JULIAVERSION: "julianightlies/bin/winnt/x86/julia-latest-win32.exe"
     - JULIAVERSION: "julianightlies/bin/winnt/x64/julia-latest-win64.exe"
 
@@ -31,7 +35,7 @@ build_script:
   # Need to convert from shallow to complete for Pkg.clone to work
   - IF EXIST .git\shallow (git fetch --unshallow)
   - C:\projects\julia\bin\julia -e "versioninfo()"
-  - C:\projects\julia\bin\julia -e "Pkg.clone(pwd(), \"Hwloc\"); Pkg.build(\"Hwloc\")"
+  - C:\projects\julia\bin\julia -e "VERSION >= v\"0.7.0-DEV.3630\" && using Pkg; Pkg.clone(pwd(), \"Hwloc\"); Pkg.build(\"Hwloc\")"
 
 test_script:
-  - C:\projects\julia\bin\julia -e "Pkg.test(\"Hwloc\", coverage=true)"
+  - C:\projects\julia\bin\julia -e "VERSION >= v\"0.7.0-DEV.3630\" && using Pkg; Pkg.test(\"Hwloc\", coverage=true)"
