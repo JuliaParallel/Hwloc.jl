@@ -3,15 +3,14 @@ os:
   - linux
   - osx
 julia:
-  - "0.5"
-  - "0.6"
+  - "0.7"
   - "1.0"
   - "nightly"
 notifications:
   email: false
 script:
   - if [ -e .git/shallow ]; then git fetch --unshallow; fi
-  - julia -e 'VERSION >= v"0.7.0-DEV.3630" && using Pkg; Pkg.clone(pwd()); Pkg.build("Hwloc")'
-  - julia -e 'VERSION >= v"0.7.0-DEV.3630" && using Pkg; Pkg.test("Hwloc", coverage=true)'
+  - julia -e 'using Pkg; Pkg.clone(pwd()); Pkg.build("Hwloc")'
+  - julia -e 'using Pkg; Pkg.test("Hwloc", coverage=true)'
 after_success:
   - if [ "$TRAVIS_JULIA_VERSION" = nightly ]; then julia -e 'using Pkg; cd(Pkg.dir("Hwloc")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi

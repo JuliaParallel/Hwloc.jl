@@ -1,13 +1,8 @@
 using BinDeps
 
-using Compat
-import Compat.Sys
-
 @BinDeps.setup
 
 libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5"])
-
-# Note: We need hwloc 1.x, we don't support hwloc 2.x yet
 
 # Install via a package manager
 @static if Sys.islinux()
@@ -21,16 +16,16 @@ end
 end
 
 provides(Binaries,
-         URI("http://www.open-mpi.org/software/hwloc/v1.11/downloads/" *
-             "hwloc-win$(Base.Sys.WORD_SIZE)-build-1.11.10.zip"),
+         URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
+             "hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1.zip"),
          [libhwloc],
-         unpacked_dir="hwloc-win$(Base.Sys.WORD_SIZE)-build-1.11.10/bin",
+         unpacked_dir="hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1/bin",
          os = :Windows)
 
 # Build from source
 provides(Sources,
-         Dict(URI("http://www.open-mpi.org/software/hwloc/v1.11/downloads/" *
-                  "hwloc-1.11.10.tar.gz") => libhwloc))
+         Dict(URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
+                  "hwloc-2.0.1.tar.gz") => libhwloc))
 provides(BuildProcess,
          Dict(Autotools(libtarget="src/libhwloc.la",
                         configure_options=["--without-x"]) => libhwloc))
