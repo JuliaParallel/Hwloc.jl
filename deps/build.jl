@@ -27,7 +27,7 @@ provides(Sources,
          Dict(URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
                   "hwloc-2.0.1.tar.gz") => libhwloc))
 provides(BuildProcess,
-         Dict(Autotools(libtarget="src/libhwloc.la",
+         Dict(Autotools(libtarget="hwloc/libhwloc.la",
                         configure_options=["--without-x"]) => libhwloc))
 
 @BinDeps.install Dict(:libhwloc => :libhwloc)
