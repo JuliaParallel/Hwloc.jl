@@ -17,7 +17,7 @@ end
 
 if Sys.iswindows()
     using WinRPM
-    provides(WinRPM.RPM, "hdf5", hdf5, os=:Windows)
+    provides(WinRPM.RPM, "hwloc", libhwloc, os=:Windows)
 end
 
 # provides(Binaries,
