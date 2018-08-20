@@ -15,12 +15,12 @@ end
     provides(Homebrew.HB, "hwloc", libhwloc)
 end
 
-#TODO provides(Binaries,
-#TODO          URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
-#TODO              "hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1.zip"),
-#TODO          [libhwloc],
-#TODO          unpacked_dir="hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1/bin",
-#TODO          os = :Windows)
+provides(Binaries,
+         URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
+             "hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1.zip"),
+         [libhwloc],
+         unpacked_dir="hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1/bin",
+         os = :Windows)
 
 # Build from source
 provides(Sources,
