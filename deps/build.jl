@@ -15,17 +15,22 @@ if Sys.islinux()
     provides(Yum, "hwloc-devel", libhwloc, os=:Linux)
 end
 
-if Sys.iswindows()
-    using WinRPM
-    provides(WinRPM.RPM, "hwloc", libhwloc, os=:Windows)
-end
+# WinRPM on 32-bit Windows says:
+#     "Your platform i686-w64-mingw32 is not supported by this package!"
+# WinRPM on 64-bit Windows says:
+#     "None of the selected providers can install dependency libhwloc."
+#
+# if Sys.iswindows()
+#     using WinRPM
+#     provides(WinRPM.RPM, "hwloc", libhwloc, os=:Windows)
+# end
 
-# provides(Binaries,
-#          URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
-#              "hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1.zip"),
-#          [libhwloc],
-#          unpacked_dir="hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1/bin",
-#          os = :Windows)
+provides(Binaries,
+         URI("http://www.open-mpi.org/software/hwloc/v2.0/downloads/" *
+             "hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1.zip"),
+         [libhwloc],
+         unpacked_dir="hwloc-win$(Base.Sys.WORD_SIZE)-build-2.0.1/bin",
+         os = :Windows)
 
 # Build from source
 provides(Sources,
