@@ -5,6 +5,8 @@
 *.o
 deps.jl
 deps/builds
+deps/build.log
+deps/hwloc-*
 deps/downloads
 deps/src/hwloc-*
 deps/usr
