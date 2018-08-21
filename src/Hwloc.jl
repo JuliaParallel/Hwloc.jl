@@ -1,11 +1,4 @@
-__precompile__()
-
 module Hwloc
-
-using Compat
-
-import Base: isempty, start, done, next, length
-import Base: show
 
 if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
     include("../deps/deps.jl")
@@ -13,13 +6,31 @@ else
     error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
 end
 
+
+
+import Base: show
+import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
+
 export get_api_version, topology_load, getinfo, histmap, num_physical_cores
+
+
+
+function get_api_version()
+    version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
+    patch = version % 256
+    version = version ÷ 256
+    minor = version % 256
+    version = version ÷ 256
+    major = version
+    VersionNumber(major, minor, patch)
+end
+const api_version = get_api_version()
 
 
 
 # Note: These must correspond to <hwloc.h>
 
-const hwloc_bitmap_t = Ptr{Void}
+const hwloc_bitmap_t = Ptr{Cvoid}
 const hwloc_cpuset_t = hwloc_bitmap_t
 const hwloc_nodeset_t = hwloc_bitmap_t
 
@@ -30,28 +41,35 @@ const hwloc_obj_osdev_type_t = Cint
 
 # Note: The order of these declaration must correspond to then enums
 # in <hwloc.h>
-const obj_types = Symbol[:System, :Machine, :Node, :Socket, :Cache, :Core, :PU,
-                         :Group, :Misc, :Bridge, :PCI_Device, :OS_Device,
-                         :Error]
-const cache_types = Symbol[:Unified, :Data, :Instruction]
+const obj_types_v1 =
+    Symbol[:System, :Machine, :Node, :Socket, :Cache, :Core, :PU, :Group, :Misc,
+           :Bridge, :PCI_Device, :OS_Device, :Error]
+const obj_types_v2 =
+    Symbol[:Machine, :Package, :Core, :PU, :L1Cache, :L2Cache, :L3Cache,
+           :L4Cache, :L5Cache, :I1Cache, :I2Cache, :I3Cache, :Group, :NUMANode,
+           :Bridge, :PCI_Device, :OS_Device, :Misc, :Error]
+const obj_types = api_version < v"2" ? obj_types_v1 : obj_types_v2
+const cache_types =
+    Symbol[:Unified, :Data, :Instruction]
 # const bridge_types
-const osdev_types = Symbol[:Block, :GPU, :Network, :Openfabrics, :DMA, :CoProc]
+const osdev_types =
+    Symbol[:Block, :GPU, :Network, :Openfabrics, :DMA, :CoProc]
 
 
 
-immutable hwloc_obj_memory_page_type_s
+struct hwloc_obj_memory_page_type_s
     size::Culonglong
     count::Culonglong
 end
 
-immutable hwloc_obj_memory_s
+struct hwloc_obj_memory_s
     total_memory::Culonglong
     local_memory::Culonglong
     page_types_len::Cuint
     page_types::Ptr{hwloc_obj_memory_page_type_s}
 end
 
-immutable hwloc_distances_s
+struct hwloc_distances_s
     relative_depth::Cuint
     nbobjs::Cuint
     latency::Ptr{Cfloat}
@@ -59,18 +77,18 @@ immutable hwloc_distances_s
     latency_base::Cfloat
 end
 
-immutable hwloc_obj_info_s
+struct hwloc_obj_info_s
     name::Ptr{Cchar}
     value::Ptr{Cchar}
 end
 
-immutable hwloc_obj
+struct hwloc_obj_v1
     # physical information
     type_::hwloc_obj_type_t
     os_index::Cuint
     name::Ptr{Cchar}
     memory::hwloc_obj_memory_s
-    attr::Ptr{Void}             # Ptr{hwloc_obj_attr_u}
+    attr::Ptr{Cvoid}             # Ptr{hwloc_obj_attr_u}
 
     # global position
     depth::Cuint
@@ -78,23 +96,23 @@ immutable hwloc_obj
     os_level::Cint
 
     # cousins
-    next_cousin::Ptr{hwloc_obj}
-    prev_cousin::Ptr{hwloc_obj}
+    next_cousin::Ptr{hwloc_obj_v1}
+    prev_cousin::Ptr{hwloc_obj_v1}
 
     # siblings
-    parent::Ptr{hwloc_obj}
+    parent::Ptr{hwloc_obj_v1}
     sibling_rank::Cuint
-    next_sibling::Ptr{hwloc_obj}
-    prev_sibling::Ptr{hwloc_obj}
+    next_sibling::Ptr{hwloc_obj_v1}
+    prev_sibling::Ptr{hwloc_obj_v1}
 
     # children
     arity::Cuint
-    children::Ptr{Ptr{hwloc_obj}}
-    first_child::Ptr{hwloc_obj}
-    last_child::Ptr{hwloc_obj}
+    children::Ptr{Ptr{hwloc_obj_v1}}
+    first_child::Ptr{hwloc_obj_v1}
+    last_child::Ptr{hwloc_obj_v1}
 
     # misc
-    userdata::Ptr{Void}
+    userdata::Ptr{Cvoid}
 
     # cpusets and nodesets
     cpuset::hwloc_cpuset_t
@@ -116,9 +134,74 @@ immutable hwloc_obj
     # symmetry
     symmetric_subtree::Cint
 end
+
+struct hwloc_obj_v2
+    # physical information
+    type_::hwloc_obj_type_t
+    subtype::Ptr{Cchar}
+    os_index::Cuint             # (unsigned)-1 if unknown
+    name::Ptr{Cchar}
+    total_memory::Culonglong
+    attr::Ptr{Cvoid}             # Ptr{hwloc_obj_attr_u}
+
+    # global position
+    depth::Cint
+    logical_index::Cuint
+
+    # cousins
+    next_cousin::Ptr{hwloc_obj_v2}
+    prev_cousin::Ptr{hwloc_obj_v2}
+
+    # parent
+    parent::Ptr{hwloc_obj_v2}
+
+    # siblings
+    sibling_rank::Cuint
+    next_sibling::Ptr{hwloc_obj_v2}
+    prev_sibling::Ptr{hwloc_obj_v2}
+
+    # children
+    arity::Cuint
+    children::Ptr{Ptr{hwloc_obj_v2}}
+    first_child::Ptr{hwloc_obj_v2}
+    last_child::Ptr{hwloc_obj_v2}
+
+    # symmetry
+    symmetric_subtree::Cint
+
+    # memory
+    memory_arity::Cuint
+    memory_first_child::Ptr{hwloc_obj_v2}
+
+    # I/O
+    io_arity::Cuint
+    io_first_child::Ptr{hwloc_obj_v2}
+
+    # misc
+    misc_arity::Cuint
+    misc_first_child::Ptr{hwloc_obj_v2}
+
+    # cpusets and nodesets
+    cpuset::hwloc_cpuset_t
+    complete_cpuset::hwloc_cpuset_t
+    nodeset::hwloc_cpuset_t
+    complete_nodeset::hwloc_cpuset_t
+
+    # infos
+    infos::Ptr{hwloc_obj_info_s}
+    infos_count::Cuint
+
+    # misc
+    userdata::Ptr{Cvoid}
+
+    # global
+    gp_index::Culonglong
+end
+
+const hwloc_obj = api_version < v"2" ? hwloc_obj_v1 : hwloc_obj_v2
 const hwloc_obj_t = Ptr{hwloc_obj}
 
-immutable hwloc_cache_attr_s
+struct hwloc_cache_attr_s
     size::Culonglong
     depth::Cuint
     linesize::Cuint
@@ -126,11 +209,11 @@ immutable hwloc_cache_attr_s
     type_::hwloc_obj_cache_type_t
 end
 
-immutable hwloc_group_attr_s
+struct hwloc_group_attr_s
     depth::Cuint
 end
 
-immutable hwloc_pcidev_attr_s
+struct hwloc_pcidev_attr_s
     domain::Cushort
     bus::Cuchar
     dev::Cuchar
@@ -146,19 +229,19 @@ end
 
 # hwloc_bridge_attr_s
 
-immutable hwloc_osdev_attr_s
+struct hwloc_osdev_attr_s
     type_::hwloc_obj_osdev_type_t
 end
 
 
 
-@compat abstract type Attribute end
+abstract type Attribute end
 
-type NullAttr <: Attribute
+mutable struct NullAttr <: Attribute
 end
 show(io::IO, a::NullAttr) = print(io, "")
 
-type CacheAttr <: Attribute
+mutable struct CacheAttr <: Attribute
     size::Int
     depth::Int                  # cache level
     linesize::Int
@@ -170,14 +253,14 @@ function show(io::IO, a::CacheAttr)
           "associativity=$(a.associativity),type=$(string(a.type_))}")
 end
 
-type GroupAttr <: Attribute
+mutable struct GroupAttr <: Attribute
     depth::Int
 end
 function show(io::IO, a::GroupAttr)
     print(io, "Group{depth=$(a.depth)}")
 end
 
-type PCIDevAttr <: Attribute
+mutable struct PCIDevAttr <: Attribute
     domain::Int
     bus::Int
     dev::Int
@@ -195,7 +278,7 @@ show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
 
 # type BridgeAttr <: Attribute end
 
-type OSDevAttr <: Attribute
+mutable struct OSDevAttr <: Attribute
     type_::Symbol
 end
 function show(io::IO, a::OSDevAttr)
@@ -204,33 +287,37 @@ end
 
 
 
-type Object
+mutable struct Object
     type_::Symbol
     os_index::Int
-    name::Compat.String
+    name::String
     attr::Attribute
 
     depth::Int
     logical_index::Int
-    os_level::Int
+    # os_level::Int
 
     children::Vector{Object}
 
     Object() = new(:Error, -1, "(nothing)", NullAttr(),
-                   -1, -1, -1,
+                   -1, -1, # -1,
                    Object[])
 end
 
+IteratorSize(::Type{Object}) = Base.SizeUnknown()
+IteratorEltype(::Type{Object}) = Base.HasEltype()
+eltype(::Type{Object}) = Object
 isempty(::Object) = false
-start(obj::Object) = [obj]
-done(::Object, state::Vector{Object}) = isempty(state)
-function next(::Object, state::Vector{Object})
-    obj = shift!(state)
+iterate(obj::Object) = (obj, obj.children)
+function iterate(::Object, state::Vector{Object})
+    isempty(state) && return nothing
+    # depth-first traversal
+    # obj = shift!(state)
+    obj, state = state[1], state[2:end]
     prepend!(state, obj.children)
     return obj, state
 end
-
-length(obj::Object) = mapreduce(x->1, +, obj)
+# length(obj::Object) = mapreduce(x->1, +, obj)
 
 function show(io::IO, obj::Object)
     println(io, repeat(" ", 4*max(0,obj.depth)),
@@ -243,37 +330,25 @@ end
 
 
 
-function get_api_version()
-    version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
-    patch = version % 256
-    version = version ÷ 256
-    minor = version % 256
-    version = version ÷ 256
-    major = version
-    VersionNumber(major, minor, patch)
-end
-
-
-
 function topology_load()
-    htopop = Ref{Ptr{Void}}()
-    ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Void},), htopop)
+    htopop = Ref{Ptr{Cvoid}}()
+    ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Cvoid},), htopop)
     @assert ierr==0
     htopo = htopop[]
-    ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Void},), htopo)
+    ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Cvoid},), htopo)
     @assert ierr==0
 
-    depth = ccall((:hwloc_topology_get_depth, libhwloc), Cint, (Ptr{Void},),
+    depth = ccall((:hwloc_topology_get_depth, libhwloc), Cint, (Ptr{Cvoid},),
                   htopo)
     @assert depth >= 1
     nroots = ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cint,
-                   (Ptr{Void}, Cuint), htopo, 0)
+                   (Ptr{Cvoid}, Cuint), htopo, 0)
     @assert nroots == 1
     root = ccall((:hwloc_get_obj_by_depth, libhwloc), hwloc_obj_t,
-                 (Ptr{Void}, Cuint, Cuint), htopo, 0, 0)
+                 (Ptr{Cvoid}, Cuint, Cuint), htopo, 0, 0)
     topo = load(root)
 
-    ccall((:hwloc_topology_destroy, libhwloc), Void, (Ptr{Void},), htopo)
+    ccall((:hwloc_topology_destroy, libhwloc), Cvoid, (Ptr{Cvoid},), htopo)
 
     return topo
 end
@@ -298,11 +373,11 @@ function load(hobj::hwloc_obj_t)
 
     topo.logical_index = obj.logical_index
 
-    topo.os_level = obj.os_level
+    # topo.os_level = obj.os_level
 
-    children = Vector{hwloc_obj_t}(obj.arity)
-    ccall(:memcpy, Ptr{Void}, (Ptr{Void}, Ptr{Void}, Csize_t), children,
-          obj.children, obj.arity*sizeof(Ptr{Void}))
+    children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
+    ccall(:memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t), children,
+          obj.children, obj.arity*sizeof(Ptr{Cvoid}))
 
     for child in children
         @assert child != C_NULL
@@ -312,16 +387,19 @@ function load(hobj::hwloc_obj_t)
     return topo
 end
 
-function load_attr(hattr::Ptr{Void}, type_::Symbol)
+function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     if type_==:System
         return NullAttr()
     elseif type_==:Machine
         return NullAttr()
-    elseif type_==:Node
+    elseif type_==:Package
+        return NullAttr()
+    elseif type_ ∈ [:Node, :NUMANode]
         return NullAttr()
     elseif type_==:Socket
         return NullAttr()
-    elseif type_==:Cache
+    elseif type_ ∈ [:Cache, :L1Cache, :L2Cache, :L3Cache, :L4Cache, :L5Cache,
+                    :I1Cache, :I2Cache, :I3Cache]
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return CacheAttr(ha.size, ha.depth, ha.linesize, ha.associativity,
                          cache_types[ha.type_+1])
@@ -340,7 +418,7 @@ function load_attr(hattr::Ptr{Void}, type_::Symbol)
     elseif type_==:OS_Device
         error("not implemented")
     else
-        error("Unsupported object type")
+        error("Unsupported object type $type_")
     end
 end
 
@@ -348,12 +426,13 @@ end
 
 # Condense information similar to hwloc-info
 function getinfo(obj::Object)
-    maxdepth = mapreduce(obj->obj.depth, max, 0, obj)
-    types = fill(:Error, maxdepth+1)
-    foldl((_,obj)->(types[obj.depth+1] = obj.type_; nothing), nothing, obj)
-    counts = fill(0, maxdepth+1)
-    foldl((_,obj)->(counts[obj.depth+1] += 1; nothing), nothing, obj)
-    return collect(zip(types, counts))
+    maxdepth = mapreduce(obj->obj.depth, max, obj; init=0)
+    types_counts = fill((:Error, 0), maxdepth+1)
+    for subobj in obj
+        _, oldcount = types_counts[subobj.depth+1]
+        types_counts[subobj.depth+1] = (subobj.type_, oldcount + 1)
+    end
+    return types_counts
 end
 
 
@@ -361,7 +440,9 @@ end
 # Create a histogram
 function histmap(obj::Object)
     counts = Dict{Symbol,Int}([(t, 0) for t in obj_types])
-    foldl((_,obj)->(counts[obj.type_]+=1; nothing), nothing, obj)
+    for subobj in obj
+        counts[subobj.type_] += 1
+    end
     return counts
 end
 

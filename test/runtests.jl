@@ -1,5 +1,5 @@
 using Hwloc
-using Base.Test
+using Test
 
 version = Hwloc.get_api_version()
 @test isa(version, VersionNumber)

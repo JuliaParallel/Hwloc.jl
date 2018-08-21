@@ -1,4 +1,4 @@
 @osx Homebrew
+# @windows WinRPM
 BinDeps
-Compat 0.17.0
-julia 0.5
+julia 0.7

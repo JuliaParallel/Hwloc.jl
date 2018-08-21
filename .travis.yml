@@ -1,16 +1,16 @@
 language: julia
 os:
-  - linux
   - osx
+  - linux
 julia:
-  - 0.5
-  - 0.6
+  - "0.7"
+  - "1.0"
   - nightly
 notifications:
   email: false
-script:
-  - if [ -e .git/shallow ]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone(pwd()); Pkg.build("Hwloc")'
-  - julia -e 'Pkg.test("Hwloc", coverage=true)'
+#script: # the default script is equivalent to the following
+#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#  - julia -e 'Pkg.clone(pwd()); Pkg.build("Hwloc"); Pkg.test("Hwloc"; coverage=true)';
 after_success:
-  - if [ "$TRAVIS_JULIA_VERSION" = nightly ]; then julia -e 'cd(Pkg.dir("Hwloc")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
+  - julia -e 'cd(Pkg.dir("Hwloc")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
+#  - julia -e 'cd(Pkg.dir("Hwloc")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())';
