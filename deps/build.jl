@@ -2,7 +2,7 @@ using BinDeps
 
 @BinDeps.setup
 
-libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5"])
+libhwloc = library_dependency("libhwloc", aliases=["libhwloc-5", "libhwloc-15"])
 
 # Install via a package manager
 if Sys.isapple()
