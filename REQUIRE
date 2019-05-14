@@ -1,4 +1,3 @@
 @osx Homebrew
-# @windows WinRPM
 BinDeps
 julia 0.7
