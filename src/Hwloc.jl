@@ -6,7 +6,9 @@ else
     error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
 end
 
-
+function __init__()
+    check_deps()
+end
 
 import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
