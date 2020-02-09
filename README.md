@@ -116,16 +116,28 @@ import Hwloc
 ncores = Hwloc.num_physical_cores()
 ```
 
+
+
 The L1 cache properties:
 
 ```
 import Hwloc
 topology = Hwloc.topology_load()
-l1cache = first(t for t in topology if t.type_ == :L1Cache && t.attr.depth == 1).attr
-println("L1 cache information: $l1cache")
+l1caches=Hwloc.collectobjects(topology,:L1Cache) |> Hwloc.attributes
+println("L1 cache information: $(first(l1caches))")
 ```
 
 This may print:
 ```
 L1 cache information: Cache{size=32768,depth=1,linesize=64,associativity=0,type=Data}
 ```
+
+For the interesting cache sizes, there are some shortcuts:
+```
+@show Hwloc.l3cache_sizes();
+Hwloc.l3cache_sizes() = [12582912]
+@show Hwloc.l2cache_sizes();
+Hwloc.l2cache_sizes() = [262144, 262144, 262144, 262144, 262144, 262144]
+@show Hwloc.l1cache_sizes()
+Hwloc.l1cache_sizes() = [32768, 32768, 32768, 32768, 32768, 32768]
+````

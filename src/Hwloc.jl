@@ -5,8 +5,7 @@ import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 export get_api_version, topology_load, getinfo, histmap, num_physical_cores
-
-
+export collectobjects, attributes, num_packages, l3cache_sizes, l2cache_sizes, l1cache_sizes
 
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
@@ -430,7 +429,8 @@ function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     end
 end
 
-
+###########################################################
+# High level API
 
 # Condense information similar to hwloc-info
 function getinfo(obj::Object)
@@ -444,7 +444,6 @@ function getinfo(obj::Object)
 end
 
 
-
 # Create a histogram
 function histmap(obj::Object)
     counts = Dict{Symbol,Int}([(t, 0) for t in obj_types])
@@ -454,10 +453,43 @@ function histmap(obj::Object)
     return counts
 end
 
-# Wrappers for commonly queried info
+
+# Collect objects of given type from topology.
+function collectobjects(t::Hwloc.Object,type_::Union{String,Symbol}, objects_found=nothing)
+    if objects_found==nothing
+        objects_found=[]
+    end
+    t.type_==Symbol(type_) &&  push!(objects_found,t)
+    map(child->collectobjects(child,type_,objects_found),t.children)
+    objects_found
+end
+
+
+# Retrieve attributes of collected objects.
+# E.g.  `collectobjects(topology,:L2Cache) |> attributes`
+# gives the list of L2 cache data.
+attributes(objects)=map(x->x.attr,objects)
+
+
+# Return number of cores
 function num_physical_cores()
   topo = topology_load()
   histmap(topo)[:Core]
 end
+
+
+# Return number of processor packages (sockets). Compute servers usually consist
+# of several packages which in turn contain several cores.
+num_packages()=collectobjects(Hwloc.topology_load(),:Package) |> Base.length
+
+# Return L3 cache sizes (in Bytes) of each package.
+# Usually, L3 cache is shared by all cores in a package. 
+l3cache_sizes()=map(obj->obj.attr.size,collectobjects(Hwloc.topology_load(),:L3Cache))
+
+# Return L2 cache sizes (in Bytes) of each core.
+l2cache_sizes()=map(obj->obj.attr.size,collectobjects(Hwloc.topology_load(),:L2Cache))
+
+# Return L1 cache sizes (in Bytes) of each core.
+l1cache_sizes()=map(obj->obj.attr.size,collectobjects(Hwloc.topology_load(),:L1Cache))
 
 end
