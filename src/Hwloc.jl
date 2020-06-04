@@ -1,14 +1,5 @@
 module Hwloc
-
-if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
-    include("../deps/deps.jl")
-else
-    error("Hwloc not properly installed; please run Pkg.build(\"Hwloc\")")
-end
-
-function __init__()
-    check_deps()
-end
+using Hwloc_jll
 
 import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
