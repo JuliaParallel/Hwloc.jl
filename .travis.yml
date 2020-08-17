@@ -8,6 +8,10 @@ julia:
   - "nightly"
 notifications:
   email: false
+jobs:
+  include:
+    - os: linux
+      arch: arm64
 #script: # the default script is equivalent to the following
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("Hwloc"); Pkg.test("Hwloc"; coverage=true)';
