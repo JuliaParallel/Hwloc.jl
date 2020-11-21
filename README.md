@@ -121,7 +121,7 @@ The L1 cache properties:
 ```
 import Hwloc
 topology = Hwloc.topology_load()
-l1cache = first(filter(t->t.type_==:Cache && t.attr.depth==1, topology)).attr
+l1cache = first(t for t in topology if t.type_ == :L1Cache && t.attr.depth == 1).attr
 println("L1 cache information: $l1cache")
 ```
 
