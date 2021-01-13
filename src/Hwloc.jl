@@ -401,7 +401,8 @@ function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     elseif type_==:PU
         return NullAttr()
     elseif type_==:Group
-        error("not implemented")
+        ha = unsafe_load(convert(Ptr{hwloc_group_attr_s}, hattr))
+        return GroupAttr(ha.depth)
     elseif type_==:Misc
         error("not implemented")
     elseif type_==:Bridge
