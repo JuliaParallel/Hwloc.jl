@@ -40,7 +40,7 @@ const obj_types_v1 =
 const obj_types_v2 =
     Symbol[:Machine, :Package, :Core, :PU, :L1Cache, :L2Cache, :L3Cache,
            :L4Cache, :L5Cache, :I1Cache, :I2Cache, :I3Cache, :Group, :NUMANode,
-           :Bridge, :PCI_Device, :OS_Device, :Misc, :Error]
+           :Bridge, :PCI_Device, :OS_Device, :Misc, :MemCache, :Die, :Error]
 const obj_types = api_version < v"2" ? obj_types_v1 : obj_types_v2
 const cache_types =
     Symbol[:Unified, :Data, :Instruction]
@@ -278,6 +278,15 @@ function show(io::IO, a::OSDevAttr)
     print(io, "OSDev{type=$(string(a.type_))}")
 end
 
+mutable struct DieAttr <: Attribute
+    depth::Int
+end
+function show(io::IO, a::DieAttr)
+    print(io, "Die{depth=$(a.depth)}")
+end
+
+# type MemCacheAttr <: Attribute end
+
 
 
 mutable struct Object
@@ -410,6 +419,11 @@ function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     elseif type_==:PCI_Device
         error("not implemented")
     elseif type_==:OS_Device
+        error("not implemented")
+    elseif type_==:Die
+        ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
+        return DieAttr(ha.depth)
+    elseif type_==:MemCache
         error("not implemented")
     else
         error("Unsupported object type $type_")
