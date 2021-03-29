@@ -294,6 +294,7 @@ mutable struct Object
     os_index::Int
     name::String
     attr::Attribute
+    mem::Int
 
     depth::Int
     logical_index::Int
@@ -302,7 +303,7 @@ mutable struct Object
     children::Vector{Object}
 
     Object() = new(:Error, -1, "(nothing)", NullAttr(),
-                   -1, -1, # -1,
+                   -1, -1, -1, # -1,
                    Object[])
 end
 
@@ -370,6 +371,8 @@ function load(hobj::hwloc_obj_t)
     topo.name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
 
     topo.attr = load_attr(obj.attr, topo.type_)
+
+    topo.mem = Int(obj.total_memory)
 
     topo.depth = obj.depth
 
