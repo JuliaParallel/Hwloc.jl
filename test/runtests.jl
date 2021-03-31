@@ -1,5 +1,6 @@
 using Hwloc
 using Test
+import CpuId
 
 version = Hwloc.get_api_version()
 @test isa(version, VersionNumber)
@@ -17,6 +18,7 @@ println(counts)
 @test counts[:Core] > 0
 @test counts[:PU] > 0
 @test num_physical_cores() == counts[:Core]
+@test cachesize() == CpuId.cachesize()
 
 # Hierarchical summary of topology
 hinfo = Hwloc.getinfo(topology)

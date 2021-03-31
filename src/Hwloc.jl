@@ -4,7 +4,7 @@ using Hwloc_jll
 import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
 
-export get_api_version, topology_load, getinfo, histmap, num_physical_cores
+export get_api_version, topology_load, getinfo, histmap, num_physical_cores, cachesize
 
 
 
@@ -458,6 +458,25 @@ end
 function num_physical_cores()
   topo = topology_load()
   histmap(topo)[:Core]
+end
+
+function cachesize()
+    l1 = l2 = l3 = zero(Int)
+    fl1 = fl2 = fl3 = false
+    for obj in topology_load()
+        if obj.type_ == :L1Cache
+            l1 = obj.attr.size::Int
+            fl1 = true
+        elseif obj.type_ == :L2Cache
+            l2 = obj.attr.size::Int
+            fl2 = true
+        elseif obj.type_ == :L3Cache
+            l3 = obj.attr.size::Int
+            fl3 = true
+        end
+        (fl1 && fl2 && fl3) && break
+    end
+    return (l1, l2, l3)
 end
 
 end
