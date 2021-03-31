@@ -303,7 +303,7 @@ mutable struct Object
     children::Vector{Object}
 
     Object() = new(:Error, -1, "(nothing)", NullAttr(),
-                   -1, -1, -1, # -1,
+                   0, -1, -1, # -1,
                    Object[])
 end
 
