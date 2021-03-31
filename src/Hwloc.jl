@@ -294,7 +294,7 @@ mutable struct Object
     os_index::Int
     name::String
     attr::Attribute
-    mem::Int
+    mem::UInt
 
     depth::Int
     logical_index::Int
@@ -372,7 +372,7 @@ function load(hobj::hwloc_obj_t)
 
     topo.attr = load_attr(obj.attr, topo.type_)
 
-    topo.mem = Int(obj.total_memory)
+    topo.mem = UInt(obj.total_memory)
 
     topo.depth = obj.depth
 
