@@ -299,10 +299,12 @@ mutable struct Object
     # os_level::Int
 
     children::Vector{Object}
+    
+    memory_children::Vector{Object}
 
     Object() = new(:Error, -1, "(nothing)", NullAttr(),
                    -1, -1, # -1,
-                   Object[])
+                   Object[], Object[])
 end
 
 IteratorSize(::Type{Object}) = Base.SizeUnknown()
@@ -321,9 +323,32 @@ end
 # length(obj::Object) = mapreduce(x->1, +, obj)
 
 function show(io::IO, obj::Object)
-    println(io, repeat(" ", 4*max(0,obj.depth)),
-            "D$(obj.depth): L$(obj.logical_index) P$(obj.os_index) ",
-            "$(string(obj.type_)) $(obj.name) $(obj.attr)")
+    idxstr = obj.type_ in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
+    attrstr = string(obj.attr)
+
+    if obj.type_ in (:L1Cache, :L2Cache, :L3Cache)
+        tstr = first(string(obj.type_), 2)
+        csize = obj.attr.size ÷ 1024
+        if csize > 1000
+            attrstr = "($(csize ÷ 1024) MB)"
+        else
+            attrstr = "($csize KB)"
+        end
+    elseif obj.type_ == :Package
+        tstr = "Package"
+        # TODO: add total memory info
+    else
+        tstr = string(obj.type_)
+    end
+
+    println(io, repeat(" ", 4*max(0,obj.depth)), tstr, " ",
+        idxstr,
+        attrstr)
+
+    for memchild in obj.memory_children
+        println(io, repeat(" ", 4*max(0,obj.depth)), string(memchild.type_))
+    end
+
     for child in obj.children
         show(io, child)
     end
@@ -383,6 +408,10 @@ function load(hobj::hwloc_obj_t)
     for child in children
         @assert child != C_NULL
         push!(topo.children, load(child))
+    end
+
+    if obj.memory_arity != C_NULL && obj.memory_first_child != C_NULL
+        push!(topo.memory_children, load(obj.memory_first_child))
     end
 
     return topo
