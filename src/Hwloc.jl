@@ -293,6 +293,7 @@ mutable struct Object
     os_index::Int
     name::String
     attr::Attribute
+    mem::UInt
 
     depth::Int
     logical_index::Int
@@ -303,7 +304,7 @@ mutable struct Object
     memory_children::Vector{Object}
 
     Object() = new(:Error, -1, "(nothing)", NullAttr(),
-                   -1, -1, # -1,
+                   0, -1, -1, # -1,
                    Object[], Object[])
 end
 
@@ -322,31 +323,43 @@ function iterate(::Object, state::Vector{Object})
 end
 # length(obj::Object) = mapreduce(x->1, +, obj)
 
+function bytes2string(x::Integer)
+    y = float(x)
+    if y > 1023
+        y = y / 1024
+        if y > 1023
+            y = y / 1024
+            if y > 1023
+                return string(round(y / 1024, digits=2), " GB")
+            else
+                return string(round(y, digits=2), " MB")
+            end
+        else
+            return string(round(y, digits=2), " KB")    
+        end
+    else
+        return string(round(y, digits=2), " B")
+    end
+end
+
 function show(io::IO, obj::Object)
     idxstr = obj.type_ in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
     if obj.type_ in (:L1Cache, :L2Cache, :L3Cache)
         tstr = first(string(obj.type_), 2)
-        csize = obj.attr.size ÷ 1024
-        if csize > 1000
-            attrstr = "($(csize ÷ 1024) MB)"
-        else
-            attrstr = "($csize KB)"
-        end
-    elseif obj.type_ == :Package
-        tstr = "Package"
-        # TODO: add total memory info
+        attrstr = "("*bytes2string(obj.attr.size)*")"
     else
         tstr = string(obj.type_)
     end
 
     println(io, repeat(" ", 4*max(0,obj.depth)), tstr, " ",
         idxstr,
-        attrstr)
+        attrstr, obj.mem > 0 ? "("*bytes2string(obj.mem)*")" : "")
 
     for memchild in obj.memory_children
-        println(io, repeat(" ", 4*max(0,obj.depth)), string(memchild.type_))
+        memstr = "("*bytes2string(memchild.mem)*")"
+        println(io, repeat(" ", 4*max(0,obj.depth) + 4), string(memchild.type_), " ", memstr)
     end
 
     for child in obj.children
@@ -394,6 +407,8 @@ function load(hobj::hwloc_obj_t)
     topo.name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
 
     topo.attr = load_attr(obj.attr, topo.type_)
+
+    topo.mem = UInt(obj.total_memory)
 
     topo.depth = obj.depth
 
