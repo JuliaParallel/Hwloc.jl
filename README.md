@@ -119,12 +119,11 @@ ncores = Hwloc.num_physical_cores()
 
 
 The L1 cache properties:
-
 ```
 import Hwloc
 topology = Hwloc.topology_load()
-l1caches=Hwloc.collectobjects(topology,:L1Cache) |> Hwloc.attributes
-println("L1 cache information: $(first(l1caches))")
+l1caches_attributes = Hwloc.attributes.(collectobjects(topology,:L1Cache))
+println("L1 cache information: $(first(l1caches_attributes))")
 ```
 
 This may print:
