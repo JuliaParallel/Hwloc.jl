@@ -455,21 +455,9 @@ end
 
 
 # Collect objects of given type from topology.
-function collectobjects(t::Hwloc.Object,type_::Union{String,Symbol}, objects_found=nothing)
-    if objects_found==nothing
-        objects_found=[]
-    end
-    t.type_==Symbol(type_) &&  push!(objects_found,t)
-    map(child->collectobjects(child,type_,objects_found),t.children)
-    objects_found
-end
+collectobjects(t::Object, type_::Symbol) = collect(Iterators.filter(obj -> obj.type_ == type_, t))
 
-
-# Retrieve attributes of collected objects.
-# E.g.  `collectobjects(topology,:L2Cache) |> attributes`
-# gives the list of L2 cache data.
-attributes(objects)=map(x->x.attr,objects)
-
+attributes(obj::Object)=obj.attr
 
 # Return number of cores
 function num_physical_cores()
@@ -480,16 +468,16 @@ end
 
 # Return number of processor packages (sockets). Compute servers usually consist
 # of several packages which in turn contain several cores.
-num_packages()=collectobjects(Hwloc.topology_load(),:Package) |> Base.length
+num_packages() = count(obj->obj.type_ == :Package, Hwloc.topology_load())
 
 # Return L3 cache sizes (in Bytes) of each package.
 # Usually, L3 cache is shared by all cores in a package. 
-l3cache_sizes()=map(obj->obj.attr.size,collectobjects(Hwloc.topology_load(),:L3Cache))
+l3cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, Hwloc.topology_load()))
 
 # Return L2 cache sizes (in Bytes) of each core.
-l2cache_sizes()=map(obj->obj.attr.size,collectobjects(Hwloc.topology_load(),:L2Cache))
+l2cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, Hwloc.topology_load()))
 
 # Return L1 cache sizes (in Bytes) of each core.
-l1cache_sizes()=map(obj->obj.attr.size,collectobjects(Hwloc.topology_load(),:L1Cache))
+l1cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, Hwloc.topology_load()))
 
 end
