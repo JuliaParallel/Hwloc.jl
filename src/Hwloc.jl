@@ -5,8 +5,7 @@ import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 export get_api_version, topology_load, getinfo, histmap, num_physical_cores
-
-
+export collectobjects, attributes, num_packages, l3cache_sizes, l2cache_sizes, l1cache_sizes
 
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
@@ -430,7 +429,8 @@ function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     end
 end
 
-
+###########################################################
+# High level API
 
 # Condense information similar to hwloc-info
 function getinfo(obj::Object)
@@ -444,7 +444,6 @@ function getinfo(obj::Object)
 end
 
 
-
 # Create a histogram
 function histmap(obj::Object)
     counts = Dict{Symbol,Int}([(t, 0) for t in obj_types])
@@ -454,10 +453,31 @@ function histmap(obj::Object)
     return counts
 end
 
-# Wrappers for commonly queried info
+
+# Collect objects of given type from topology.
+collectobjects(t::Object, type_::Symbol) = collect(Iterators.filter(obj -> obj.type_ == type_, t))
+
+attributes(obj::Object)=obj.attr
+
+# Return number of cores
 function num_physical_cores()
   topo = topology_load()
   histmap(topo)[:Core]
 end
+
+
+# Return number of processor packages (sockets). Compute servers usually consist
+# of several packages which in turn contain several cores.
+num_packages() = count(obj->obj.type_ == :Package, Hwloc.topology_load())
+
+# Return L3 cache sizes (in Bytes) of each package.
+# Usually, L3 cache is shared by all cores in a package. 
+l3cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, Hwloc.topology_load()))
+
+# Return L2 cache sizes (in Bytes) of each core.
+l2cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, Hwloc.topology_load()))
+
+# Return L1 cache sizes (in Bytes) of each core.
+l1cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, Hwloc.topology_load()))
 
 end
