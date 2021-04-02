@@ -34,14 +34,10 @@ const hwloc_obj_osdev_type_t = Cint
 
 # Note: The order of these declaration must correspond to then enums
 # in <hwloc.h>
-const obj_types_v1 =
-    Symbol[:System, :Machine, :Node, :Socket, :Cache, :Core, :PU, :Group, :Misc,
-           :Bridge, :PCI_Device, :OS_Device, :Error]
-const obj_types_v2 =
+const obj_types =
     Symbol[:Machine, :Package, :Core, :PU, :L1Cache, :L2Cache, :L3Cache,
            :L4Cache, :L5Cache, :I1Cache, :I2Cache, :I3Cache, :Group, :NUMANode,
            :Bridge, :PCI_Device, :OS_Device, :Misc, :MemCache, :Die, :Error]
-const obj_types = api_version < v"2" ? obj_types_v1 : obj_types_v2
 const cache_types =
     Symbol[:Unified, :Data, :Instruction]
 # const bridge_types
@@ -75,60 +71,7 @@ struct hwloc_obj_info_s
     value::Ptr{Cchar}
 end
 
-struct hwloc_obj_v1
-    # physical information
-    type_::hwloc_obj_type_t
-    os_index::Cuint
-    name::Ptr{Cchar}
-    memory::hwloc_obj_memory_s
-    attr::Ptr{Cvoid}             # Ptr{hwloc_obj_attr_u}
-
-    # global position
-    depth::Cuint
-    logical_index::Cuint
-    os_level::Cint
-
-    # cousins
-    next_cousin::Ptr{hwloc_obj_v1}
-    prev_cousin::Ptr{hwloc_obj_v1}
-
-    # siblings
-    parent::Ptr{hwloc_obj_v1}
-    sibling_rank::Cuint
-    next_sibling::Ptr{hwloc_obj_v1}
-    prev_sibling::Ptr{hwloc_obj_v1}
-
-    # children
-    arity::Cuint
-    children::Ptr{Ptr{hwloc_obj_v1}}
-    first_child::Ptr{hwloc_obj_v1}
-    last_child::Ptr{hwloc_obj_v1}
-
-    # misc
-    userdata::Ptr{Cvoid}
-
-    # cpusets and nodesets
-    cpuset::hwloc_cpuset_t
-    complete_cpuset::hwloc_cpuset_t
-    online_cpuset::hwloc_cpuset_t
-    allowed_cpuset::hwloc_cpuset_t
-    nodeset::hwloc_nodeset_t
-    complete_nodeset::hwloc_nodeset_t
-    allowed_nodeset::hwloc_nodeset_t
-
-    # distances
-    distances::Ptr{Ptr{hwloc_distances_s}}
-    distances_count::Cuint
-
-    # infos
-    infos::Ptr{hwloc_obj_info_s}
-    infos_count::Cuint
-
-    # symmetry
-    symmetric_subtree::Cint
-end
-
-struct hwloc_obj_v2
+struct hwloc_obj
     # physical information
     type_::hwloc_obj_type_t
     subtype::Ptr{Cchar}
@@ -142,37 +85,37 @@ struct hwloc_obj_v2
     logical_index::Cuint
 
     # cousins
-    next_cousin::Ptr{hwloc_obj_v2}
-    prev_cousin::Ptr{hwloc_obj_v2}
+    next_cousin::Ptr{hwloc_obj}
+    prev_cousin::Ptr{hwloc_obj}
 
     # parent
-    parent::Ptr{hwloc_obj_v2}
+    parent::Ptr{hwloc_obj}
 
     # siblings
     sibling_rank::Cuint
-    next_sibling::Ptr{hwloc_obj_v2}
-    prev_sibling::Ptr{hwloc_obj_v2}
+    next_sibling::Ptr{hwloc_obj}
+    prev_sibling::Ptr{hwloc_obj}
 
     # children
     arity::Cuint
-    children::Ptr{Ptr{hwloc_obj_v2}}
-    first_child::Ptr{hwloc_obj_v2}
-    last_child::Ptr{hwloc_obj_v2}
+    children::Ptr{Ptr{hwloc_obj}}
+    first_child::Ptr{hwloc_obj}
+    last_child::Ptr{hwloc_obj}
 
     # symmetry
     symmetric_subtree::Cint
 
     # memory
     memory_arity::Cuint
-    memory_first_child::Ptr{hwloc_obj_v2}
+    memory_first_child::Ptr{hwloc_obj}
 
     # I/O
     io_arity::Cuint
-    io_first_child::Ptr{hwloc_obj_v2}
+    io_first_child::Ptr{hwloc_obj}
 
     # misc
     misc_arity::Cuint
-    misc_first_child::Ptr{hwloc_obj_v2}
+    misc_first_child::Ptr{hwloc_obj}
 
     # cpusets and nodesets
     cpuset::hwloc_cpuset_t
@@ -191,7 +134,6 @@ struct hwloc_obj_v2
     gp_index::Culonglong
 end
 
-const hwloc_obj = api_version < v"2" ? hwloc_obj_v1 : hwloc_obj_v2
 const hwloc_obj_t = Ptr{hwloc_obj}
 
 struct hwloc_cache_attr_s
