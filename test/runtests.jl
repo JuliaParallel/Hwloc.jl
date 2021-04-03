@@ -40,14 +40,23 @@ if allequal(l3s) # running on a machine with equal caches
     @test first(l3s) == l3
 end
 
+# collecting normal objects
 @test typeof(collectobjects(topology, :L1Cache)) == Vector{Hwloc.Object}
 @test length(collectobjects(topology, :L1Cache)) == counts[:L1Cache]
 @test first(collectobjects(topology, :L1Cache)).type_ == :L1Cache
+
+# collecting memory objects
+if counts[:NUMANode] > 0 # just in case the system doesn't have a NUMA node element
+    @test length(collectobjects(topology, :NUMANode)) == counts[:NUMANode]
+    @test first(collectobjects(topology, :NUMANode)).type_ == :NUMANode
+    @test first(collectobjects(topology, :NUMANode)).mem > 0
+end
 
 # Hierarchical summary of topology
 hinfo = Hwloc.getinfo(topology)
 println("Info:")
 println(hinfo)
+@test typeof(hinfo) == Vector{Tuple{Symbol, Int64}}
 @test hinfo[1][1] ∈ (:System, :Machine)
 @test hinfo[1][2] == 1
 @test hinfo[end][1] == :PU

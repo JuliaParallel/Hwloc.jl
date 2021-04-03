@@ -254,13 +254,13 @@ IteratorSize(::Type{Object}) = Base.SizeUnknown()
 IteratorEltype(::Type{Object}) = Base.HasEltype()
 eltype(::Type{Object}) = Object
 isempty(::Object) = false
-iterate(obj::Object) = (obj, isempty(obj.memory_children) ? obj.children : vcat(obj.children, obj.memory_children))
+iterate(obj::Object) = (obj, isempty(obj.memory_children) ? obj.children : vcat(obj.memory_children, obj.children))
 function iterate(::Object, state::Vector{Object})
     isempty(state) && return nothing
     # depth-first traversal
     # obj = shift!(state)
     obj, state = state[1], state[2:end]
-    prepend!(state, obj.children, obj.memory_children)
+    prepend!(state, obj.memory_children, obj.children)
     return obj, state
 end
 # length(obj::Object) = mapreduce(x->1, +, obj)
@@ -420,15 +420,17 @@ end
 
 # Condense information similar to hwloc-info
 function getinfo(obj::Object)
-    maxdepth = mapreduce(obj->obj.depth, max, obj; init=0)
-    types_counts = fill((:Error, 0), maxdepth+1)
+    res = Tuple{Symbol, Int64}[]
     for subobj in obj
-        _, oldcount = types_counts[subobj.depth+1]
-        types_counts[subobj.depth+1] = (subobj.type_, oldcount + 1)
+        idx = findfirst(t->t[1] == subobj.type_, res)
+        if isnothing(idx)
+            push!(res, (subobj.type_, 1))
+        else
+            res[idx] = (subobj.type_, res[idx][2]+1)
+        end
     end
-    return types_counts
+    return res
 end
-
 
 # Create a histogram
 function histmap(obj::Object)
