@@ -260,7 +260,8 @@ function iterate(::Object, state::Vector{Object})
     # depth-first traversal
     # obj = shift!(state)
     obj, state = state[1], state[2:end]
-    prepend!(state, obj.memory_children, obj.children)
+    prepend!(state, obj.children)
+    prepend!(state, obj.memory_children)
     return obj, state
 end
 # length(obj::Object) = mapreduce(x->1, +, obj)
