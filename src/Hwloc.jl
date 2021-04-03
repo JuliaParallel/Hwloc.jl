@@ -5,7 +5,7 @@ import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 export get_api_version, topology_load, getinfo, histmap, num_physical_cores
-export collectobjects, attributes, num_packages, l3cache_sizes, l2cache_sizes, l1cache_sizes
+export collectobjects, attributes, num_packages, cachesize, cachelinesize
 
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
@@ -461,12 +461,43 @@ num_packages() = count(obj->obj.type_ == :Package, Hwloc.topology_load())
 
 # Return L3 cache sizes (in Bytes) of each package.
 # Usually, L3 cache is shared by all cores in a package. 
-l3cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, Hwloc.topology_load()))
+l3cache_sizes(topo=topology_load()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, topo))
+l3cache_linesizes(topo=topology_load()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L3Cache, topo))
 
 # Return L2 cache sizes (in Bytes) of each core.
-l2cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, Hwloc.topology_load()))
+l2cache_sizes(topo=topology_load()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, topo))
+l2cache_linesizes(topo=topology_load()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L2Cache, topo))
 
 # Return L1 cache sizes (in Bytes) of each core.
-l1cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, Hwloc.topology_load()))
+l1cache_sizes(topo=topology_load()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, topo))
+l1cache_linesizes(topo=topology_load()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L1Cache, topo))
+
+function cachesize()
+    topo = topology_load()
+    allequal = xs -> all(x == first(xs) for x in xs)
+    l1 = l1cache_sizes(topo)
+    l2 = l2cache_sizes(topo)
+    l3 = l3cache_sizes(topo)
+
+    allequal(l1) || (@warn "Not all L1 cache sizes are equal. Consider using `l1cache_sizes()` instead.")
+    allequal(l2) || (@warn "Not all L2 cache sizes are equal. Consider using `l2cache_sizes()` instead.")
+    allequal(l3) || (@warn "Not all L3 cache sizes are equal. Consider using `l3cache_sizes()` instead.")
+
+    return (L1=first(l1), L2=first(l2), L3=first(l3))
+end
+
+function cachelinesize()
+    topo = topology_load()
+    allequal = xs -> all(x == first(xs) for x in xs)
+    l1 = l1cache_linesizes(topo)
+    l2 = l2cache_linesizes(topo)
+    l3 = l3cache_linesizes(topo)
+
+    allequal(l1) || (@warn "Not all L1 cache-line sizes are equal. Consider using `l1cache_linesizes()` instead.")
+    allequal(l2) || (@warn "Not all L2 cache-line sizes are equal. Consider using `l2cache_linesizes()` instead.")
+    allequal(l3) || (@warn "Not all L3 cache-line sizes are equal. Consider using `l3cache_linesizes()` instead.")
+
+    return (L1=first(l1), L2=first(l2), L3=first(l3))
+end
 
 end

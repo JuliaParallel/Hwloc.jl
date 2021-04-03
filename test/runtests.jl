@@ -1,6 +1,6 @@
 using Hwloc
 using Test
-using CpuId
+import CpuId
 
 version = Hwloc.get_api_version()
 @test isa(version, VersionNumber)
@@ -24,21 +24,35 @@ println(counts)
 allequal(xs) = all(x == first(xs) for x in xs)
 l1, l2, l3 = CpuId.cachesize()
 
-l1s = l1cache_sizes()
+l1s = Hwloc.l1cache_sizes()
+l1ls = Hwloc.l1cache_linesizes()
 @test length(l1s) == counts[:L1Cache]
+@test length(l1ls) == counts[:L1Cache]
 if allequal(l1s) # running on a machine with equal caches
     @test first(l1s) == l1
 end
-l2s = l2cache_sizes()
+l2s = Hwloc.l2cache_sizes()
+l2ls = Hwloc.l2cache_linesizes()
 @test length(l2s) == counts[:L2Cache]
+@test length(l2ls) == counts[:L2Cache]
 if allequal(l2s) # running on a machine with equal caches
     @test first(l2s) == l2
 end
-l3s = l3cache_sizes()
+l3s = Hwloc.l3cache_sizes()
+l3ls = Hwloc.l3cache_linesizes()
 @test length(l3s) == counts[:L3Cache]
+@test length(l3ls) == counts[:L3Cache]
 if allequal(l3s) # running on a machine with equal caches
     @test first(l3s) == l3
 end
+
+@test cachesize() == (L1=first(l1s), L2=first(l2s), L3=first(l3s))
+
+if allequal(vcat(l1ls, l2ls, l3ls))
+    cls = CpuId.cachelinesize()
+    @test cachelinesize() == (L1=cls, L2=cls, L3=cls)
+end
+@test cachelinesize() == (L1=first(l1ls), L2=first(l2ls), L3=first(l3ls))
 
 # collecting normal objects
 @test typeof(collectobjects(topology, :L1Cache)) == Vector{Hwloc.Object}
