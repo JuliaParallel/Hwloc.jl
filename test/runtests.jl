@@ -19,6 +19,7 @@ println(counts)
 @test counts[:PU] > 0
 @test num_physical_cores() == counts[:Core]
 @test num_packages() == counts[:Package]
+@test num_numa() == counts[:NUMANode]
 
 # Cache sizes
 allequal(xs) = all(x == first(xs) for x in xs)

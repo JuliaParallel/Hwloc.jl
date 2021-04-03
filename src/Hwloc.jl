@@ -5,7 +5,7 @@ import Base: show
 import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 export get_api_version, topology_load, getinfo, histmap, num_physical_cores
-export collectobjects, attributes, num_packages, cachesize, cachelinesize
+export collectobjects, attributes, num_packages, num_numa, cachesize, cachelinesize
 
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
@@ -458,6 +458,8 @@ end
 # Return number of processor packages (sockets). Compute servers usually consist
 # of several packages which in turn contain several cores.
 num_packages() = count(obj->obj.type_ == :Package, Hwloc.topology_load())
+
+num_numa() = count(obj->obj.type_ == :NUMANode, Hwloc.topology_load())
 
 # Return L3 cache sizes (in Bytes) of each package.
 # Usually, L3 cache is shared by all cores in a package. 
