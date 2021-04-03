@@ -420,7 +420,7 @@ end
 # High level API
 
 # Condense information similar to hwloc-info
-function getinfo(obj::Object)
+function getinfo(obj::Object=topology_load())
     res = Tuple{Symbol, Int64}[]
     for subobj in obj
         idx = findfirst(t->t[1] == subobj.type_, res)
