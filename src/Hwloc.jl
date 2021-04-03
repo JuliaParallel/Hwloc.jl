@@ -6,6 +6,7 @@ import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 export get_api_version, topology_load, getinfo, histmap, num_physical_cores
 export collectobjects, attributes, num_packages, num_numa, cachesize, cachelinesize
+export print_topology, print_summary
 
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
@@ -418,6 +419,33 @@ end
 
 ###########################################################
 # High level API
+
+function print_topology()
+    # For now, we just forward to the print/show methods
+    print(topology_load())
+    return nothing
+end
+
+function print_summary()
+    topo = topology_load()
+    nodes = Tuple{Symbol, Int64, String}[]
+    for subobj in topo
+        idx = findfirst(t->t[1] == subobj.type_, nodes)
+        if isnothing(idx)
+            attrstr = ""
+            subobj.mem > 0 && (attrstr = " ($(bytes2string(subobj.mem)))")
+            subobj.type_ ∈ (:L1Cache, :L2Cache, :L3Cache) && (attrstr = " ($(bytes2string(subobj.attr.size)))")
+            push!(nodes, (subobj.type_, 1, attrstr))
+        else
+            nodes[idx] = (subobj.type_, nodes[idx][2]+1, nodes[idx][3])
+        end
+    end
+
+    for (i,n) in enumerate(nodes)
+        println(repeat(" ", i-1), "$(n[1]): ", n[2], n[3])
+    end
+    return nothing
+end
 
 # Condense information similar to hwloc-info
 function getinfo(obj::Object=topology_load())
