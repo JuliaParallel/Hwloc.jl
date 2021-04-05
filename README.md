@@ -1,8 +1,7 @@
 # Portable Hardware Locality (Hwloc)
 
-[![Build Status](https://travis-ci.org/JuliaParallel/Hwloc.jl.svg?branch=master)](https://travis-ci.org/JuliaParallel/Hwloc.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/5gdday025kd4ni48?svg=true)](https://ci.appveyor.com/project/eschnett/hwloc-jl)
-[![Coverage Status](https://coveralls.io/repos/JuliaParallel/Hwloc.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaParallel/Hwloc.jl?branch=master)
+[![Build Status](https://github.com/JuliaParallel/Hwloc.jl/workflows/CI/badge.svg)](https://github.com/JuliaParallel/Hwloc.jl/actions)
+[![Coverage](https://codecov.io/gh/JuliaParallel/Hwloc.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaParallel/Hwloc.jl)
 
 This Julia package wraps the hwloc library.
 
