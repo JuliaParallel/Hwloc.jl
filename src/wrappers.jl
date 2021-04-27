@@ -332,6 +332,12 @@ function load(hobj::hwloc_obj_t)
     return topo
 end
 
+
+"""
+    topology_load() -> Hwloc.Object
+
+Load the system topology by calling into libhwloc.
+"""
 function topology_load()
     htopop = Ref{Ptr{Cvoid}}()
     ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Cvoid},), htopop)
