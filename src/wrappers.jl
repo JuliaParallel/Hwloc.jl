@@ -288,6 +288,9 @@ function iterate(::Object, state::Vector{Object})
 end
 # length(obj::Object) = mapreduce(x->1, +, obj)
 
+attributes(obj::Object) = obj.attr
+children(obj::Object) = obj.children
+
 
 # Load topology for an object and all its children
 function load(hobj::hwloc_obj_t)
@@ -329,7 +332,7 @@ function load(hobj::hwloc_obj_t)
     return topo
 end
 
-function load_topology()
+function topology_load()
     htopop = Ref{Ptr{Cvoid}}()
     ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Cvoid},), htopop)
     @assert ierr==0

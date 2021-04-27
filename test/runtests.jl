@@ -7,8 +7,10 @@ version = Hwloc.get_api_version()
 @test version >= v"2.0"
 
 # Topology (complete information)
-topology = Hwloc.load_topology()
+topology = Hwloc.topology_load()
 @test isa(topology, Hwloc.Object)
+@test hwloc_typeof(topology) == :Machine
+@test hwloc_isa(topology, :Machine)
 println("Topology:")
 topology = Hwloc.topology()
 @test isa(topology, Hwloc.Object)

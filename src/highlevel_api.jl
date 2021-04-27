@@ -1,3 +1,6 @@
+"""
+Returns the API version of libhwloc.
+"""
 function get_api_version()
     version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
     patch = version % 256
@@ -8,15 +11,18 @@ function get_api_version()
     VersionNumber(major, minor, patch)
 end
 
+"""
+Prints a summary of the system topology (loosely similar to `hwloc-info`).
+"""
 function print_summary()
-    topo = load_topology()
+    topo = topology_load()
     nodes = Tuple{Symbol, Int64, String}[]
     for subobj in topo
         idx = findfirst(t->t[1] == subobj.type_, nodes)
         if isnothing(idx)
             attrstr = ""
-            subobj.mem > 0 && (attrstr = " ($(bytes2string(subobj.mem)))")
-            subobj.type_ ∈ (:L1Cache, :L2Cache, :L3Cache) && (attrstr = " ($(bytes2string(subobj.attr.size)))")
+            subobj.mem > 0 && (attrstr = " ($(_bytes2string(subobj.mem)))")
+            subobj.type_ ∈ (:L1Cache, :L2Cache, :L3Cache) && (attrstr = " ($(_bytes2string(subobj.attr.size)))")
             push!(nodes, (subobj.type_, 1, attrstr))
         else
             nodes[idx] = (subobj.type_, nodes[idx][2]+1, nodes[idx][3])
@@ -29,29 +35,35 @@ function print_summary()
     return nothing
 end
 
+"""
+Prints the system topology as a tree and returns the toplevel `Hwloc.Object`.
+"""
 function topology()
-    topo = load_topology()
+    topo = topology_load()
     print_topology(topo)
     return topo
 end
 
-function print_topology(io::IO = stdout, obj::Object = load_topology())
+"""
+Prints the system topology as a tree.
+"""
+function print_topology(io::IO = stdout, obj::Object = topology_load())
     idxstr = obj.type_ in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
     if obj.type_ in (:L1Cache, :L2Cache, :L3Cache)
         tstr = first(string(obj.type_), 2)
-        attrstr = "("*bytes2string(obj.attr.size)*")"
+        attrstr = "("*_bytes2string(obj.attr.size)*")"
     else
         tstr = string(obj.type_)
     end
 
     println(io, repeat(" ", 4*max(0,obj.depth)), tstr, " ",
         idxstr,
-        attrstr, obj.mem > 0 ? "("*bytes2string(obj.mem)*")" : "")
+        attrstr, obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : "")
 
     for memchild in obj.memory_children
-        memstr = "("*bytes2string(memchild.mem)*")"
+        memstr = "("*_bytes2string(memchild.mem)*")"
         println(io, repeat(" ", 4*max(0,obj.depth) + 4), string(memchild.type_), " ", memstr)
     end
 
@@ -62,8 +74,10 @@ end
 print_topology(obj::Object) = print_topology(stdout, obj)
 
 
-# Condense information similar to hwloc-info
-function getinfo(obj::Object=load_topology())
+"""
+Returns a vector of 
+"""
+function getinfo(obj::Object=topology_load())
     res = Tuple{Symbol, Int64}[]
     for subobj in obj
         idx = findfirst(t->t[1] == subobj.type_, res)
@@ -85,40 +99,85 @@ function histmap(obj::Object)
     return counts
 end
 
+"""
+Returns the hwloc "type" of the given `Hwloc.Object` as a `Symbol`.
+For example, `hwloc_typeof(topology_load()) == :Machine`.
+"""
+hwloc_typeof(obj::Object) = obj.type_
 
-# Collect objects of given type from topology.
-collectobjects(t::Object, type_::Symbol) = collect(Iterators.filter(obj -> obj.type_ == type_, t))
+"""
+    hwloc_isa(obj::Object, type::Symbol)
 
-attributes(obj::Object)=obj.attr
+Checks if `hwloc_typeof(obj) == type`.
+For example, `hwloc_isa(topology_load(), :Machine) == true`.
+"""
+hwloc_isa(obj::Object, type::Symbol) = hwloc_typeof(obj) == type
 
-# Return number of cores
-function num_physical_cores()
-  topo = load_topology()
-  histmap(topo)[:Core]
-end
+"""
+    hwloc_isa(type::Symbol)
 
+Returns a function `obj::Object -> Bool` that checks whether a given object is of type `type` (in the sense of `hwloc_typeof`).
+"""
+hwloc_isa(type::Symbol) = obj -> hwloc_typeof(obj) == type
 
-# Return number of processor packages (sockets). Compute servers usually consist
-# of several packages which in turn contain several cores.
-num_packages() = count(obj->obj.type_ == :Package, Hwloc.load_topology())
+"""
+Collects objects of the given hwloc type from topology.
+"""
+collectobjects(t::Object, type::Symbol) = collect(Iterators.filter(hwloc_isa(type), t))
 
-num_numa_nodes() = count(obj->obj.type_ == :NUMANode, Hwloc.load_topology())
+"""
+The number of physical cores.
+"""
+num_physical_cores() = count(hwloc_isa(:Core), topology_load())
 
-# Return L3 cache sizes (in Bytes) of each package.
-# Usually, L3 cache is shared by all cores in a package. 
-l3cache_sizes(topo=load_topology()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, topo))
-l3cache_linesizes(topo=load_topology()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L3Cache, topo))
+"""
+The number of virtual cores, i.e. logical processing units.
+"""
+num_virtual_cores() = count(hwloc_isa(:PU), topology_load())
 
-# Return L2 cache sizes (in Bytes) of each core.
-l2cache_sizes(topo=load_topology()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, topo))
-l2cache_linesizes(topo=load_topology()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L2Cache, topo))
+"""
+The number of processor packages (sockets).
+"""
+num_packages() = count(obj->obj.type_ == :Package, Hwloc.topology_load())
 
-# Return L1 cache sizes (in Bytes) of each core.
-l1cache_sizes(topo=load_topology()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, topo))
-l1cache_linesizes(topo=load_topology()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L1Cache, topo))
+"""
+The number of NUMA nodes.
+"""
+num_numa_nodes() = count(obj->obj.type_ == :NUMANode, Hwloc.topology_load())
 
+"""
+Returns a vector containing the sizes of all available L3 caches in Bytes.
+"""
+l3cache_sizes(topo=topology_load()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, topo))
+"""
+Returns a vector containing the L3 cache line sizes in Bytes.
+"""
+l3cache_linesizes(topo=topology_load()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L3Cache, topo))
+
+"""
+Returns a vector containing the sizes of all available L2 caches in Bytes.
+"""
+l2cache_sizes(topo=topology_load()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, topo))
+"""
+Returns a vector containing the L2 cache line sizes in Bytes.
+"""
+l2cache_linesizes(topo=topology_load()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L2Cache, topo))
+
+"""
+Returns a vector containing the sizes of all available L1 caches in Bytes.
+"""
+l1cache_sizes(topo=topology_load()) = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, topo))
+"""
+Returns a vector containing the L1 cache line sizes in Bytes.
+"""
+l1cache_linesizes(topo=topology_load()) = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L1Cache, topo))
+
+"""
+Returns the L1, L2, and L3 cache sizes in Bytes.
+(Produces a warning if caches of the same level have different sizes across the system.)
+"""
 function cachesize()
-    topo = load_topology()
+    topo = topology_load()
     allequal = xs -> all(x == first(xs) for x in xs)
     l1 = l1cache_sizes(topo)
     l2 = l2cache_sizes(topo)
@@ -131,22 +190,26 @@ function cachesize()
     return (L1=first(l1), L2=first(l2), L3=first(l3))
 end
 
+"""
+Returns the L1, L2, and L3 cache line sizes in Bytes.
+(Produces a warning if cache line sizes vary between caches of the same level across the system.)
+"""
 function cachelinesize()
-    topo = load_topology()
+    topo = topology_load()
     allequal = xs -> all(x == first(xs) for x in xs)
     l1 = l1cache_linesizes(topo)
     l2 = l2cache_linesizes(topo)
     l3 = l3cache_linesizes(topo)
 
-    allequal(l1) || (@warn "Not all L1 cache-line sizes are equal. Consider using `l1cache_linesizes()` instead.")
-    allequal(l2) || (@warn "Not all L2 cache-line sizes are equal. Consider using `l2cache_linesizes()` instead.")
-    allequal(l3) || (@warn "Not all L3 cache-line sizes are equal. Consider using `l3cache_linesizes()` instead.")
+    allequal(l1) || (@warn "Not all L1 cache line sizes are equal. Consider using `l1cache_linesizes()` instead.")
+    allequal(l2) || (@warn "Not all L2 cache line sizes are equal. Consider using `l2cache_linesizes()` instead.")
+    allequal(l3) || (@warn "Not all L3 cache line sizes are equal. Consider using `l3cache_linesizes()` instead.")
 
     return (L1=first(l1), L2=first(l2), L3=first(l3))
 end
 
 
-function bytes2string(x::Integer)
+function _bytes2string(x::Integer)
     y = float(x)
     if y > 1023
         y = y / 1024
