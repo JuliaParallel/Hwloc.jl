@@ -9,3 +9,5 @@ deps/downloads
 deps/src/hwloc-*
 deps/usr
 deps/build.log
+src/Hwloc.jl
+Manifest.toml

@@ -4,11 +4,13 @@ import CpuId
 
 version = Hwloc.get_api_version()
 @test isa(version, VersionNumber)
+@test version >= v"2.0"
 
 # Topology (complete information)
-topology = Hwloc.topology_load()
+topology = Hwloc.load_topology()
+@test isa(topology, Hwloc.Object)
 println("Topology:")
-print(topology)
+topology = Hwloc.topology()
 @test isa(topology, Hwloc.Object)
 
 # Counts for various object types (e.g. cores)
@@ -19,7 +21,7 @@ println(counts)
 @test counts[:PU] > 0
 @test num_physical_cores() == counts[:Core]
 @test num_packages() == counts[:Package]
-@test num_numa() == counts[:NUMANode]
+@test num_numa_nodes() == counts[:NUMANode]
 
 # Cache sizes
 allequal(xs) = all(x == first(xs) for x in xs)
