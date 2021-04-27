@@ -3,7 +3,7 @@ using Hwloc_jll
 
 import Base: show, IteratorSize, IteratorEltype, isempty, eltype, iterate
 
-include("wrappers.jl")
+include("libhwloc.jl")
 include("highlevel_api.jl")
 
 export topology, topology_load, topology_info, print_topology, getinfo, histmap
