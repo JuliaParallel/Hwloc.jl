@@ -1,8 +1,7 @@
 module Hwloc
 using Hwloc_jll
 
-import Base: show
-import Base: IteratorSize, IteratorEltype, isempty, eltype, iterate
+import Base: show, IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 include("wrappers.jl")
 include("highlevel_api.jl")
