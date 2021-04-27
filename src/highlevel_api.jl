@@ -12,9 +12,18 @@ function get_api_version()
 end
 
 """
+Prints the system topology as a tree and returns the toplevel `Hwloc.Object`.
+"""
+function topology()
+    topo = topology_load()
+    print_topology(topo)
+    return topo
+end
+
+"""
 Prints a summary of the system topology (loosely similar to `hwloc-info`).
 """
-function print_summary()
+function topology_info()
     topo = topology_load()
     nodes = Tuple{Symbol, Int64, String}[]
     for subobj in topo
@@ -33,15 +42,6 @@ function print_summary()
         println(repeat(" ", i-1), "$(n[1]): ", n[2], n[3])
     end
     return nothing
-end
-
-"""
-Prints the system topology as a tree and returns the toplevel `Hwloc.Object`.
-"""
-function topology()
-    topo = topology_load()
-    print_topology(topo)
-    return topo
 end
 
 """
@@ -73,30 +73,24 @@ function print_topology(io::IO = stdout, obj::Object = topology_load())
 end
 print_topology(obj::Object) = print_topology(stdout, obj)
 
+"""
+Programmatic version of `topology_info()`. Returns a `Dict{Symbol,Int}`
+whose entries indicate which and how often certain hwloc elements are present.
 
+If the keyword argument `list_all` (default: `false`) is set to `true`,
+the resulting dictionary will contain all possible hwloc elements.
 """
-Returns a vector of 
-"""
-function getinfo(obj::Object=topology_load())
-    res = Tuple{Symbol, Int64}[]
+function getinfo(obj::Object=topology_load(); list_all::Bool = false)
+    res = list_all ? Dict{Symbol,Int}(t => 0 for t in obj_types) : Dict{Symbol, Int}()
     for subobj in obj
-        idx = findfirst(t->t[1] == subobj.type_, res)
-        if isnothing(idx)
-            push!(res, (subobj.type_, 1))
+        t = hwloc_typeof(subobj)
+        if t in keys(res)
+            res[t] += 1
         else
-            res[idx] = (subobj.type_, res[idx][2]+1)
+            res[t] = 1
         end
     end
     return res
-end
-
-# Create a histogram
-function histmap(obj::Object)
-    counts = Dict{Symbol,Int}([(t, 0) for t in obj_types])
-    for subobj in obj
-        counts[subobj.type_] += 1
-    end
-    return counts
 end
 
 """

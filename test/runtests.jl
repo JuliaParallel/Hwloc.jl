@@ -72,9 +72,9 @@ if counts[:NUMANode] > 0 # just in case the system doesn't have a NUMA node elem
 end
 
 # Hierarchical summary of topology
-hinfo = Hwloc.getinfo(topology)
 println("Info:")
-println(hinfo)
+Hwloc.topology_info()
+hinfo = Hwloc.getinfo(topology)
 @test typeof(hinfo) == Vector{Tuple{Symbol, Int64}}
 @test hinfo[1][1] ∈ (:System, :Machine)
 @test hinfo[1][2] == 1
