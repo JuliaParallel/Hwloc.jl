@@ -9,14 +9,14 @@ version = Hwloc.get_api_version()
 # Topology (complete information)
 topology = Hwloc.topology_load()
 @test isa(topology, Hwloc.Object)
-@test hwloc_typeof(topology) == :Machine
-@test hwloc_isa(topology, :Machine)
+@test hwloc_typeof(topology) ∈ (:Machine, :System)
+@test hwloc_isa(topology, :Machine) || hwloc_isa(topology, :System)
 println("Topology:")
 topology = Hwloc.topology()
 @test isa(topology, Hwloc.Object)
 
 # Counts for various object types (e.g. cores)
-counts = Hwloc.histmap(topology)
+counts = Hwloc.getinfo(topology; list_all=true)
 println("Histogram map:")
 println(counts)
 @test counts[:Core] > 0
@@ -75,8 +75,7 @@ end
 println("Info:")
 Hwloc.topology_info()
 hinfo = Hwloc.getinfo(topology)
-@test typeof(hinfo) == Vector{Tuple{Symbol, Int64}}
-@test hinfo[1][1] ∈ (:System, :Machine)
-@test hinfo[1][2] == 1
-@test hinfo[end][1] == :PU
-@test hinfo[end][2] > 0
+@test typeof(hinfo) == Dict{Symbol, Int}
+@test haskey(hinfo, :Machine)
+@test hinfo[:Machine] == 1
+@test hinfo[:PU] > 0
