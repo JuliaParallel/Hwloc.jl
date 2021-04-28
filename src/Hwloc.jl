@@ -6,9 +6,16 @@ import Base: show, IteratorSize, IteratorEltype, isempty, eltype, iterate
 include("libhwloc.jl")
 include("highlevel_api.jl")
 
-export topology, topology_load, topology_info, print_topology, getinfo, histmap
+export topology, gettopology, topology_info, getinfo, print_topology
 export num_physical_cores, num_virtual_cores, num_packages, num_numa_nodes
 export cachesize, cachelinesize
-export get_api_version, hwloc_typeof, hwloc_isa, attributes, children, collectobjects
+export hwloc_typeof, hwloc_isa, collectobjects
+
+const machine_topology = Ref{Object}()
+
+function __init__()
+    machine_topology[] = topology_load()
+    return nothing
+end
 
 end
