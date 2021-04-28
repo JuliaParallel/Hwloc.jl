@@ -17,14 +17,15 @@ end
 Prints the topology of the given `obj` as a tree to `io`.
 """
 function print_topology(io::IO = stdout, obj::Object = gettopology())
-    idxstr = obj.type_ in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
+    t = hwloc_typeof(obj)
+    idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
-    if obj.type_ in (:L1Cache, :L2Cache, :L3Cache)
-        tstr = first(string(obj.type_), 2)
+    if t in (:L1Cache, :L2Cache, :L3Cache)
+        tstr = first(string(t), 2)
         attrstr = "("*_bytes2string(obj.attr.size)*")"
     else
-        tstr = string(obj.type_)
+        tstr = string(t)
     end
 
     println(io, repeat(" ", 4*max(0,obj.depth)), tstr, " ",

@@ -149,11 +149,11 @@ end
 
 abstract type Attribute end
 
-mutable struct NullAttr <: Attribute
+struct NullAttr <: Attribute
 end
 show(io::IO, a::NullAttr) = print(io, "")
 
-mutable struct CacheAttr <: Attribute
+struct CacheAttr <: Attribute
     size::Int
     depth::Int                  # cache level
     linesize::Int
@@ -165,14 +165,14 @@ function show(io::IO, a::CacheAttr)
           "associativity=$(a.associativity),type=$(string(a.type_))}")
 end
 
-mutable struct GroupAttr <: Attribute
+struct GroupAttr <: Attribute
     depth::Int
 end
 function show(io::IO, a::GroupAttr)
     print(io, "Group{depth=$(a.depth)}")
 end
 
-mutable struct PCIDevAttr <: Attribute
+struct PCIDevAttr <: Attribute
     domain::Int
     bus::Int
     dev::Int
@@ -190,14 +190,14 @@ show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
 
 # type BridgeAttr <: Attribute end
 
-mutable struct OSDevAttr <: Attribute
+struct OSDevAttr <: Attribute
     type_::Symbol
 end
 function show(io::IO, a::OSDevAttr)
     print(io, "OSDev{type=$(string(a.type_))}")
 end
 
-mutable struct DieAttr <: Attribute
+struct DieAttr <: Attribute
     depth::Int
 end
 function show(io::IO, a::DieAttr)
@@ -250,7 +250,7 @@ end
 
 
 
-mutable struct Object
+struct Object
     type_::Symbol
     os_index::Int
     name::String
@@ -265,9 +265,9 @@ mutable struct Object
     
     memory_children::Vector{Object}
 
-    Object() = new(:Error, -1, "(nothing)", NullAttr(),
-                   0, -1, -1, # -1,
-                   Object[], Object[])
+    # Object() = new(:Error, -1, "(nothing)", NullAttr(),
+    #                0, -1, -1, # -1,
+    #                Object[], Object[])
 end
 
 show(io::IO, obj::Object) = print(io, "Hwloc.Object: $(obj.type_)")
@@ -297,38 +297,35 @@ function load(hobj::hwloc_obj_t)
     @assert hobj != C_NULL
     obj = unsafe_load(hobj)
 
-    topo = Object()
-
     @assert obj.type_>=0 && obj.type_<length(obj_types)
-    topo.type_ = obj_types[obj.type_+1]
+    type_ = obj_types[obj.type_+1]
 
-    topo.os_index = mod(obj.os_index, Cint)
+    os_index = mod(obj.os_index, Cint)
 
-    topo.name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
+    name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
 
-    topo.attr = load_attr(obj.attr, topo.type_)
+    attr = load_attr(obj.attr, type_)
 
-    topo.mem = Int64(obj.total_memory)
+    mem = Int64(obj.total_memory)
 
-    topo.depth = obj.depth
+    depth = obj.depth
 
-    topo.logical_index = obj.logical_index
+    logical_index = obj.logical_index
 
     # topo.os_level = obj.os_level
 
-    children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
-    ccall(:memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t), children,
+    obj_children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
+    ccall(:memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t), obj_children,
           obj.children, obj.arity*sizeof(Ptr{Cvoid}))
 
-    for child in children
-        @assert child != C_NULL
-        push!(topo.children, load(child))
-    end
+    children = Object[load(child) for child in obj_children]
 
+    memory_children = Object[]
     if obj.memory_arity != C_NULL && obj.memory_first_child != C_NULL
-        push!(topo.memory_children, load(obj.memory_first_child))
+        push!(memory_children, load(obj.memory_first_child))
     end
 
+    topo = Object(type_, os_index, name, attr, mem, depth, logical_index, children, memory_children)
     return topo
 end
 
