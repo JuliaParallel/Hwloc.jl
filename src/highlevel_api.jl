@@ -215,7 +215,7 @@ function _bytes2string(x::Integer)
                 return string(round(y, digits=2), " MB")
             end
         else
-            return string(round(y, digits=2), " KB")    
+            return string(round(y, digits=2), " kB")    
         end
     else
         return string(round(y, digits=2), " B")
