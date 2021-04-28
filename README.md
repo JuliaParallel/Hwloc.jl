@@ -6,7 +6,7 @@
 Hwloc.jl is a high-level wrapper of the
 [hwloc library](http://www.open-mpi.org/projects/hwloc/).
 
-Upon `import` or `using`, Hwloc.jl examines the current machine's
+Hwloc.jl examines the current machine's
 hardware topology (memories, caches, cores, etc.) and provides
 Julia functions to visualize and access this information conveniently.
 
@@ -141,8 +141,6 @@ Hwloc.l3cache_sizes() = [12582912]
 To manually traverse and investigate the system topology tree, one may use `gettopology()` to
 obtain the top-level `Hwloc.Object`.
 
-**Note:** `gettopology()` directly returns the `Hwloc.Object` stored in `Hwloc.machine_topology` and should thus be taken as providing a "view" into the system topology. One should not modify the returned object!
-
 ```julia
 julia> topo = gettopology()
 Hwloc.Object: Machine
@@ -203,7 +201,7 @@ julia> collectobjects(:PU, l2cache)
 
 ### Manual topology query
 
-Upon `import` or `using`, Hwloc.jl examines the current machine's
+On the first call of `gettopology()`, Hwloc.jl examines the current machine's
 hardware topology and caches the result in `Hwloc.machine_topology`.
 To manually query the system topology one may use `Hwloc.topology_load`
 which directly `ccall`s into `libhwloc` and directly returns the

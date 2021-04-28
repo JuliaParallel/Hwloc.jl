@@ -13,9 +13,4 @@ export hwloc_typeof, hwloc_isa, collectobjects
 
 const machine_topology = Ref{Object}()
 
-function __init__()
-    machine_topology[] = topology_load()
-    return nothing
-end
-
 end

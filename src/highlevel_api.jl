@@ -46,8 +46,17 @@ print_topology(obj::Object) = print_topology(stdout, obj)
 
 """
 Returns the top-level system topology `Object`.
+
+On first call, it loads the topology by querying
+libhwloc and caches the result.
 """
-gettopology() = machine_topology[]
+function gettopology()
+    if !isassigned(machine_topology)
+        machine_topology[] = topology_load()
+    end
+
+    return machine_topology[]
+end
 
 """
 Prints the system topology as a tree.
