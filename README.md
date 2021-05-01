@@ -4,9 +4,7 @@
 [![Coverage](https://codecov.io/gh/JuliaParallel/Hwloc.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaParallel/Hwloc.jl)
 
 Hwloc.jl is a high-level wrapper of the
-[hwloc library](http://www.open-mpi.org/projects/hwloc/).
-
-Hwloc.jl examines the current machine's
+[hwloc library](http://www.open-mpi.org/projects/hwloc/). It examines the current machine's
 hardware topology (memories, caches, cores, etc.) and provides
 Julia functions to visualize and access this information conveniently.
 
