@@ -28,36 +28,24 @@ Machine (16.0 GB)
     Package L#0 P#0 (16.0 GB)
         NUMANode (16.0 GB)
         L3 (12.0 MB)
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#0 P#0 
-                        PU L#0 P#0 
-                        PU L#1 P#1 
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#1 P#1 
-                        PU L#2 P#2 
-                        PU L#3 P#3 
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#2 P#2 
-                        PU L#4 P#4 
-                        PU L#5 P#5 
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#3 P#3 
-                        PU L#6 P#6 
-                        PU L#7 P#7 
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#4 P#4 
-                        PU L#8 P#8 
-                        PU L#9 P#9 
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#5 P#5 
-                        PU L#10 P#10 
-                        PU L#11 P#11 
+            L2 (256.0 kB) + L1 (32.0 kB) + Core L#0 P#0 
+                PU L#0 P#0 
+                PU L#1 P#1 
+            L2 (256.0 kB) + L1 (32.0 kB) + Core L#1 P#1 
+                PU L#2 P#2 
+                PU L#3 P#3 
+            L2 (256.0 kB) + L1 (32.0 kB) + Core L#2 P#2 
+                PU L#4 P#4 
+                PU L#5 P#5 
+            L2 (256.0 kB) + L1 (32.0 kB) + Core L#3 P#3 
+                PU L#6 P#6 
+                PU L#7 P#7 
+            L2 (256.0 kB) + L1 (32.0 kB) + Core L#4 P#4 
+                PU L#8 P#8 
+                PU L#9 P#9 
+            L2 (256.0 kB) + L1 (32.0 kB) + Core L#5 P#5 
+                PU L#10 P#10 
+                PU L#11 P#11
 ```
 
 Often, one is only interested in a summary of this topology.
@@ -161,11 +149,9 @@ julia> Hwloc.attributes(l2cache)
 Cache{size=262144,depth=2,linesize=64,associativity=4,type=Unified}
 
 julia> l2cache |> print_topology
-            L2 (256.0 KB)
-                L1 (32.0 KB)
-                    Core L#0 P#0 
-                        PU L#0 P#0 
-                        PU L#1 P#1
+L2 (256.0 kB) + L1 (32.0 kB) + Core L#0 P#0 
+    PU L#0 P#0 
+    PU L#1 P#1
 ```
 
 Topology elements of type `Hwloc.Object` also are Julia iterators. One can thus readily traverse the corresponding part of the topology tree:
