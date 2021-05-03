@@ -16,7 +16,7 @@ end
 
 Prints the topology of the given `obj` as a tree to `io`.
 """
-function print_topology(io::IO = stdout, obj::Object = gettopology())
+function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "", newline = false, prefix = "")
     t = hwloc_typeof(obj)
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
@@ -28,17 +28,24 @@ function print_topology(io::IO = stdout, obj::Object = gettopology())
         tstr = string(t)
     end
 
-    println(io, repeat(" ", 4*max(0,obj.depth)), tstr, " ",
+    newline && print(io, "\n", indent)
+    print(io, prefix, tstr, " ",
         idxstr,
         attrstr, obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : "")
 
     for memchild in obj.memory_children
         memstr = "("*_bytes2string(memchild.mem)*")"
-        println(io, repeat(" ", 4*max(0,obj.depth) + 4), string(memchild.type_), " ", memstr)
+        println(io)
+        print(io, indent*repeat(" ", 4), string(memchild.type_), " ", memstr)
     end
 
     for child in obj.children
-        print_topology(io, child)
+        no_newline = length(obj.children)==1 && t in (:L3Cache, :L2Cache, :L1Cache)
+        if no_newline
+            print_topology(io, child; indent = indent, newline=false, prefix = " + ", )
+        else
+            print_topology(io, child; indent = indent*repeat(" ", 4), newline=true)
+        end
     end
     return nothing
 end
