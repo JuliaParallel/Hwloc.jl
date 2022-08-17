@@ -208,7 +208,7 @@ function cachesize()
     allequal(l2) || (@warn "Not all L2 cache sizes are equal. Consider using `l2cache_sizes()` instead.")
     allequal(l3) || (@warn "Not all L3 cache sizes are equal. Consider using `l3cache_sizes()` instead.")
 
-    return (L1=first(l1), L2=first(l2), L3=first(l3))
+    return (L1=maximum(l1), L2=maximum(l2), L3=maximum(l3))
 end
 
 """
@@ -229,7 +229,7 @@ function cachesize(x::Symbol)
     end
     isempty(lx) && throw(ErrorException("Your system doesn't seem to have an $x cache."))
     allequal(lx) || (@warn "Not all $x cache sizes are equal.")
-    return first(lx)
+    return maximum(lx)
 end
 
 """
@@ -250,7 +250,7 @@ function cachelinesize()
     allequal(l2) || (@warn "Not all L2 cache line sizes are equal. Consider using `l2cache_linesizes()` instead.")
     allequal(l3) || (@warn "Not all L3 cache line sizes are equal. Consider using `l3cache_linesizes()` instead.")
 
-    return (L1=first(l1), L2=first(l2), L3=first(l3))
+    return (L1=maximum(l1), L2=maximum(l2), L3=maximum(l3))
 end
 
 """
@@ -271,7 +271,7 @@ function cachelinesize(x::Symbol)
     end
     isempty(lx) && throw(ErrorException("Your system doesn't seem to have an $x cache."))
     allequal(lx) || (@warn "Not all $x cache line sizes are equal.")
-    return first(lx)
+    return maximum(lx)
 end
 
 

@@ -1,5 +1,6 @@
 module Hwloc
 using Hwloc_jll
+using Statistics
 
 import Base: show, IteratorSize, IteratorEltype, isempty, eltype, iterate
 
