@@ -21,7 +21,7 @@ function print_topology(io::IO=stdout, obj::Object=gettopology(); indent="", new
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
-    if t in (:L1Cache, :L2Cache, :L3Cache)
+    if t in (:L1Cache, :L2Cache, :L3Cache, :I1Cache)
         tstr = first(string(t), 2)
         attrstr = "(" * _bytes2string(obj.attr.size) * ")"
     else
