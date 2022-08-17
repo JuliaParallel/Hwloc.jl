@@ -66,12 +66,18 @@ import CpuId
         end
 
         @test cachesize() == (L1=first(l1s), L2=first(l2s), L3=first(l3s))
+        @test cachesize(:L1) == first(l1s)
+        @test cachesize(:L2) == first(l2s)
+        @test cachesize(:L3) == first(l3s)
 
         if allequal(vcat(l1ls, l2ls, l3ls))
             cls = CpuId.cachelinesize()
             @test cachelinesize() == (L1=cls, L2=cls, L3=cls)
         end
         @test cachelinesize() == (L1=first(l1ls), L2=first(l2ls), L3=first(l3ls))
+        @test cachelinesize(:L1) == first(l1ls)
+        @test cachelinesize(:L2) == first(l2ls)
+        @test cachelinesize(:L3) == first(l3ls)
     end
 
     @testset "Collecting objects" begin
