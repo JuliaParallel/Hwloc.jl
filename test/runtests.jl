@@ -4,7 +4,7 @@ import CpuId
 
 # trying to debug https://github.com/m-j-w/CpuId.jl/issues/55
 display(CpuId.cpuinfo())
-joinpath(dirname(pathof(CpuId)), "..", "test", "mock.jl")
+include(joinpath(dirname(pathof(CpuId)), "..", "test", "mock.jl"))
 dump_cpuid_table()
 
 @testset "Hwloc.jl" begin
