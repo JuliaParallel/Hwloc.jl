@@ -2,6 +2,11 @@ using Hwloc
 using Test
 import CpuId
 
+# trying to debug https://github.com/m-j-w/CpuId.jl/issues/55
+display(cpuinfo())
+joinpath(dirname(pathof(CpuId)), "..", "test", "mock.jl")
+dump_cpuid_table()
+
 @testset "Hwloc.jl" begin
     @testset "Version" begin
         version = Hwloc.get_api_version()
@@ -23,7 +28,7 @@ import CpuId
         println("Info:")
         topology_info()
         counts = getinfo(list_all=true)
-        @test typeof(counts) == Dict{Symbol, Int}
+        @test typeof(counts) == Dict{Symbol,Int}
         @test length(counts) == length(Hwloc.obj_types)
         println(counts)
         @test counts[:Machine] == 1 || counts[:System] == 1
@@ -34,7 +39,7 @@ import CpuId
         @test num_packages() == counts[:Package]
         @test num_numa_nodes() == counts[:NUMANode]
         counts = getinfo(list_all=false)
-        @test typeof(counts) == Dict{Symbol, Int}
+        @test typeof(counts) == Dict{Symbol,Int}
         @test all(>(0), values(counts))
     end
 
