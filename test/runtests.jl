@@ -3,7 +3,7 @@ using Test
 import CpuId
 
 # trying to debug https://github.com/m-j-w/CpuId.jl/issues/55
-display(cpuinfo())
+display(CpuId.cpuinfo())
 joinpath(dirname(pathof(CpuId)), "..", "test", "mock.jl")
 dump_cpuid_table()
 
