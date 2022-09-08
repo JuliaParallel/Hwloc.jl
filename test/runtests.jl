@@ -67,18 +67,17 @@ import CpuId
             @test cachesize() == (L1=maximum(l1s), L2=maximum(l2s), L3=maximum(l3s))
             @test cachelinesize(:L3) == maximum(l3ls)
             @test cachelinesize() == (L1=maximum(l1ls), L2=maximum(l2ls), L3=maximum(l3ls))
-        else
-            @test_throws ErrorException cachesize()
-            @test_throws ErrorException cachelinesize()
-            @test_throws ErrorException cachesize(:L3)
-            @test_throws ErrorException cachelinesize(:L3)
-            @test isempty(Hwloc.l3cache_sizes())
-            @test isempty(Hwloc.l3cache_linesizes())
-        end
 
-        # if CpuId is working (https://github.com/m-j-w/CpuId.jl/issues/55)
-        try
-            l1, l2, l3 = CpuId.cachesize()
+            # if CpuId is working (https://github.com/m-j-w/CpuId.jl/issues/55)
+            l1, l2, l3 = first(l1s), first(l2s), first(l3s)
+            cls = first(l1ls)
+            try
+                l1, l2, l3 = CpuId.cachesize()
+                cls = CpuId.cachelinesize()
+            catch err
+                @warn("CpuId doesn't seem to be working on this system. Related tests are decommissioned.")
+            end
+
             if allequal(l1s) # running on a machine with equal caches
                 @test first(l1s) == l1
             end
@@ -89,11 +88,16 @@ import CpuId
                 @test first(l3s) == l3
             end
             if allequal(vcat(l1ls, l2ls, l3ls))
-                cls = CpuId.cachelinesize()
                 @test cachelinesize() == (L1=cls, L2=cls, L3=cls)
             end
-        catch err
-            println("CpuId doesn't seem to be working on this system. Skipping related tests.")
+        else
+            @warn("System doesn't seem to have an L3 cache level. Dropping a few tests.")
+            @test_throws ErrorException cachesize()
+            @test_throws ErrorException cachelinesize()
+            @test_throws ErrorException cachesize(:L3)
+            @test_throws ErrorException cachelinesize(:L3)
+            @test isempty(Hwloc.l3cache_sizes())
+            @test isempty(Hwloc.l3cache_linesizes())
         end
     end
 
