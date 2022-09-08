@@ -10,3 +10,4 @@ deps/src/hwloc-*
 deps/usr
 deps/build.log
 Manifest.toml
+.vscode

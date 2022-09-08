@@ -1,5 +1,6 @@
 using Hwloc
 using Test
+using Statistics
 import CpuId
 
 @testset "Hwloc.jl" begin
@@ -23,7 +24,7 @@ import CpuId
         println("Info:")
         topology_info()
         counts = getinfo(list_all=true)
-        @test typeof(counts) == Dict{Symbol, Int}
+        @test typeof(counts) == Dict{Symbol,Int}
         @test length(counts) == length(Hwloc.obj_types)
         println(counts)
         @test counts[:Machine] == 1 || counts[:System] == 1
@@ -34,44 +35,70 @@ import CpuId
         @test num_packages() == counts[:Package]
         @test num_numa_nodes() == counts[:NUMANode]
         counts = getinfo(list_all=false)
-        @test typeof(counts) == Dict{Symbol, Int}
+        @test typeof(counts) == Dict{Symbol,Int}
         @test all(>(0), values(counts))
     end
 
     @testset "Cache (line) sizes" begin
         allequal(xs) = all(x == first(xs) for x in xs)
-        l1, l2, l3 = CpuId.cachesize()
         counts = getinfo()
 
         l1s = Hwloc.l1cache_sizes()
         l1ls = Hwloc.l1cache_linesizes()
         @test length(l1s) == counts[:L1Cache]
         @test length(l1ls) == counts[:L1Cache]
-        if allequal(l1s) # running on a machine with equal caches
-            @test first(l1s) == l1
-        end
+
         l2s = Hwloc.l2cache_sizes()
         l2ls = Hwloc.l2cache_linesizes()
         @test length(l2s) == counts[:L2Cache]
         @test length(l2ls) == counts[:L2Cache]
-        if allequal(l2s) # running on a machine with equal caches
-            @test first(l2s) == l2
-        end
-        l3s = Hwloc.l3cache_sizes()
-        l3ls = Hwloc.l3cache_linesizes()
-        @test length(l3s) == counts[:L3Cache]
-        @test length(l3ls) == counts[:L3Cache]
-        if allequal(l3s) # running on a machine with equal caches
-            @test first(l3s) == l3
-        end
 
-        @test cachesize() == (L1=first(l1s), L2=first(l2s), L3=first(l3s))
+        @test cachesize(:L1) == maximum(l1s)
+        @test cachesize(:L2) == maximum(l2s)
+        @test cachelinesize(:L1) == maximum(l1ls)
+        @test cachelinesize(:L2) == maximum(l2ls)
 
-        if allequal(vcat(l1ls, l2ls, l3ls))
-            cls = CpuId.cachelinesize()
-            @test cachelinesize() == (L1=cls, L2=cls, L3=cls)
+        if Hwloc.has_object_of_type(:L3Cache) # M1 Macs don't have an L3 cache
+            l3s = Hwloc.l3cache_sizes()
+            l3ls = Hwloc.l3cache_linesizes()
+            @test length(l3s) == counts[:L3Cache]
+            @test length(l3ls) == counts[:L3Cache]
+            @test cachesize(:L3) == maximum(l3s)
+            @test cachesize() == (L1=maximum(l1s), L2=maximum(l2s), L3=maximum(l3s))
+            @test cachelinesize(:L3) == maximum(l3ls)
+            @test cachelinesize() == (L1=maximum(l1ls), L2=maximum(l2ls), L3=maximum(l3ls))
+
+            # if CpuId is working (https://github.com/m-j-w/CpuId.jl/issues/55)
+            l1, l2, l3 = first(l1s), first(l2s), first(l3s)
+            cls = first(l1ls)
+            try
+                l1, l2, l3 = CpuId.cachesize()
+                cls = CpuId.cachelinesize()
+            catch err
+                @warn("CpuId doesn't seem to be working on this system. Related tests are decommissioned.")
+            end
+
+            if allequal(l1s) # running on a machine with equal caches
+                @test first(l1s) == l1
+            end
+            if allequal(l2s) # running on a machine with equal caches
+                @test first(l2s) == l2
+            end
+            if allequal(l3s) # running on a machine with equal caches
+                @test first(l3s) == l3
+            end
+            if allequal(vcat(l1ls, l2ls, l3ls))
+                @test cachelinesize() == (L1=cls, L2=cls, L3=cls)
+            end
+        else
+            @warn("System doesn't seem to have an L3 cache level. Dropping a few tests.")
+            @test_throws ErrorException cachesize()
+            @test_throws ErrorException cachelinesize()
+            @test_throws ErrorException cachesize(:L3)
+            @test_throws ErrorException cachelinesize(:L3)
+            @test isempty(Hwloc.l3cache_sizes())
+            @test isempty(Hwloc.l3cache_linesizes())
         end
-        @test cachelinesize() == (L1=first(l1ls), L2=first(l2ls), L3=first(l3ls))
     end
 
     @testset "Collecting objects" begin
