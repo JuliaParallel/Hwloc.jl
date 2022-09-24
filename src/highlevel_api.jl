@@ -295,3 +295,9 @@ function _bytes2string(x::Integer)
 end
 
 has_object_of_type(t) = any(obj -> obj.type_ == t, gettopology())
+
+function topology_graphical()
+    lstopo_ng = joinpath(dirname(Hwloc_jll.libhwloc), "..", "bin", "lstopo-no-graphics")
+    run(`$lstopo_ng --no-io --no-legend --of txt`)
+    return nothing
+end
