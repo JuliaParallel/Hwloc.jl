@@ -296,6 +296,12 @@ end
 
 has_object_of_type(t) = any(obj -> obj.type_ == t, gettopology())
 
+"""
+Shows a graphical visualization of the system topology.
+The quality of the result might depend on the used terminal and might vary between machines and operating systems.
+
+**Note:** The specific visualization may change between minor versions.
+"""
 function topology_graphical()
     lstopo_ng = joinpath(dirname(Hwloc_jll.libhwloc), "..", "bin", "lstopo-no-graphics")
     run(`$lstopo_ng --no-io --no-legend --of txt`)
