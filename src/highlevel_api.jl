@@ -303,7 +303,12 @@ The quality of the result might depend on the used terminal and might vary betwe
 **Note:** The specific visualization may change between minor versions.
 """
 function topology_graphical()
-    lstopo_ng = joinpath(dirname(Hwloc_jll.libhwloc), "..", "bin", "lstopo-no-graphics")
-    run(`$lstopo_ng --no-io --no-legend --of txt`)
+    if isdefined(Hwloc_jll, :lstopo_no_graphics)
+        Hwloc_jll.lstopo_no_graphics() do lstopo
+            run(`$lstopo --no-io --no-legend --of txt`)
+        end
+    else
+        error("Requires Hwloc_jll version 2.8.0+1 or higher.")
+    end
     return nothing
 end
