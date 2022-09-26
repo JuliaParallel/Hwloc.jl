@@ -304,9 +304,7 @@ The quality of the result might depend on the used terminal and might vary betwe
 """
 function topology_graphical()
     if isdefined(Hwloc_jll, :lstopo_no_graphics)
-        Hwloc_jll.lstopo_no_graphics() do lstopo
-            run(`$lstopo --no-io --no-legend --of txt`)
-        end
+        run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
     else
         error("Requires Hwloc_jll version 2.8.0+1 or higher.")
     end
