@@ -303,10 +303,6 @@ The quality of the result might depend on the used terminal and might vary betwe
 **Note:** The specific visualization may change between minor versions.
 """
 function topology_graphical()
-    if isdefined(Hwloc_jll, :lstopo_no_graphics)
-        run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
-    else
-        error("Requires Hwloc_jll version 2.8.0+1 or higher.")
-    end
+    run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
     return nothing
 end
