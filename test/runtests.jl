@@ -39,6 +39,10 @@ import CpuId
         @test all(>(0), values(counts))
     end
 
+    @testset "Topology (graphical)" begin
+        @test isnothing(topology_graphical())
+    end
+
     @testset "Cache (line) sizes" begin
         allequal(xs) = all(x == first(xs) for x in xs)
         counts = getinfo()
