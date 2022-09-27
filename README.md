@@ -65,7 +65,7 @@ Machine: 1 (16.0 GB)
 
 If you prefer a more verbose graphical visualization you may consider using `topology_graphical()`:
 
-<img width="1204" alt="Screenshot 2022-09-27 at 11 38 00" src="https://user-images.githubusercontent.com/187980/192497449-5caeaa61-d456-445a-994e-35889d726940.png">
+<img width="1806" alt="Screenshot 2022-09-27 at 12 06 57" src="https://user-images.githubusercontent.com/187980/192498088-712d7ff0-c8ac-4535-b386-c08d3d0eddb3.png">
 
 (Note that as of now this may not produce colorful output on all systems.)
 
