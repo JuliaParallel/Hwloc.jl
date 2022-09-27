@@ -63,6 +63,13 @@ Machine: 1 (16.0 GB)
        PU: 12
 ```
 
+If you prefer a more verbose graphical visualization you may consider using `topology_graphical()`:
+
+<img width="1204" alt="Screenshot 2022-09-27 at 11 38 00" src="https://user-images.githubusercontent.com/187980/192497449-5caeaa61-d456-445a-994e-35889d726940.png">
+
+(Note that as of now this may not produce colorful output on all systems.)
+
+
 ## Obtaining particular information:
 
 ### Number of cores, NUMA nodes, and sockets
