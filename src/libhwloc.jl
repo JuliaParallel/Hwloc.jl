@@ -17,11 +17,9 @@ const obj_types =
            :Bridge, :PCI_Device, :OS_Device, :Misc, :MemCache, :Die, :Error]
 const cache_types =
     Symbol[:Unified, :Data, :Instruction]
-# const bridge_types
+const bridge_types = [:Host, :PCI]
 const osdev_types =
     Symbol[:Block, :GPU, :Network, :Openfabrics, :DMA, :CoProc]
-
-
 
 struct hwloc_obj_memory_page_type_s
     size::Culonglong
@@ -232,11 +230,11 @@ function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     elseif type_==:Misc
         error("not implemented")
     elseif type_==:Bridge
-        error("not implemented")
+        return NullAttr()
     elseif type_==:PCI_Device
-        error("not implemented")
+        return NullAttr()
     elseif type_==:OS_Device
-        error("not implemented")
+        return NullAttr()
     elseif type_==:Die
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return DieAttr(ha.depth)
@@ -264,6 +262,8 @@ struct Object
     children::Vector{Object}
     
     memory_children::Vector{Object}
+
+    io_children::Vector{Object}
 
     # Object() = new(:Error, -1, "(nothing)", NullAttr(),
     #                0, -1, -1, # -1,
@@ -321,25 +321,69 @@ function load(hobj::hwloc_obj_t)
     children = Object[load(child) for child in obj_children]
 
     memory_children = Object[]
-    if obj.memory_arity != C_NULL && obj.memory_first_child != C_NULL
+    if obj.memory_arity != 0 && obj.memory_first_child != C_NULL
         push!(memory_children, load(obj.memory_first_child))
     end
 
-    topo = Object(type_, os_index, name, attr, mem, depth, logical_index, children, memory_children)
+    io_children = Object[]
+    @show obj.io_arity
+    if obj.io_arity != 0 
+        io_child = obj.io_first_child
+        while io_child != C_NULL
+            push!(io_children, load(obj.io_first_child))
+            io_child = unsafe_load(io_child).next_sibling
+        end
+    end
+    @show io_children
+
+    topo = Object(type_, os_index, name, attr, mem, depth, logical_index, children, memory_children, io_children)
     return topo
 end
 
+
+# TODO enum
+const HWLOC_TYPE_FILTER_KEEP_ALL = Cint(0)
+const HWLOC_TYPE_FILTER_KEEP_NONE = Cint(1)
+const HWLOC_TYPE_FILTER_KEEP_STRUCTURE = Cint(2)
+const HWLOC_TYPE_FILTER_KEEP_IMPORTANT = Cint(3)
+
+function get_type_filter(topology, object_type)
+    r_type_filter = Ref{Cint}()
+    ierr = ccall((:hwloc_topology_get_type_filter, libhwloc), Cint, (Ptr{Cvoid}, Cint, Ptr{Cint}), topology, object_type, r_type_filter)
+    @assert ierr == 0
+    return r_type_filter[]
+end
+
+function set_type_filter!(topology, object_type, type_filter)
+    ierr = ccall((:hwloc_topology_set_type_filter, libhwloc), Cint, (Ptr{Cvoid}, Cint, Cint), topology, object_type, type_filter)
+    @assert ierr == 0
+    return
+end
+
+function set_io_types_filter!(htopo, filter)
+    os_filter_type = findfirst(s->s==:OS_Device, Hwloc.obj_types) - 1
+    set_type_filter!(htopo, os_filter_type, filter)
+    set_type_filter!(htopo, os_filter_type-1, filter)
+    set_type_filter!(htopo, os_filter_type-2, filter)
+end
+
+function topology_init()
+    r_htopo = Ref{Ptr{Cvoid}}()
+    ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Ptr{Cvoid}},), r_htopo)
+    @assert ierr == 0
+    return r_htopo[]
+end
+
+function topology_destroy(htopo)
+    ccall((:hwloc_topology_destroy, libhwloc), Cvoid, (Ptr{Cvoid},), htopo)
+end
 
 """
     topology_load() -> Hwloc.Object
 
 Load the system topology by calling into libhwloc.
 """
-function topology_load()
-    htopop = Ref{Ptr{Cvoid}}()
-    ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Cvoid},), htopop)
-    @assert ierr==0
-    htopo = htopop[]
+function topology_load(htopo=topology_init(); destroy=true)
     ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Cvoid},), htopo)
     @assert ierr==0
 
@@ -353,7 +397,9 @@ function topology_load()
                  (Ptr{Cvoid}, Cuint, Cuint), htopo, 0, 0)
     topo = load(root)
 
-    ccall((:hwloc_topology_destroy, libhwloc), Cvoid, (Ptr{Cvoid},), htopo)
+    if destroy
+        topology_destroy(htopo)
+    end
 
     return topo
 end
