@@ -321,20 +321,22 @@ function load(hobj::hwloc_obj_t)
     children = Object[load(child) for child in obj_children]
 
     memory_children = Object[]
-    if obj.memory_arity != 0 && obj.memory_first_child != C_NULL
-        push!(memory_children, load(obj.memory_first_child))
+    if obj.memory_arity != 0
+        memory_child = obj.memory_first_child 
+        while memory_child != C_NULL
+            push!(memory_children, load(memory_child))
+            memory_child = unsafe_load(memory_child).next_sibling
+        end
     end
 
     io_children = Object[]
-    @show obj.io_arity
     if obj.io_arity != 0 
         io_child = obj.io_first_child
         while io_child != C_NULL
-            push!(io_children, load(obj.io_first_child))
+            push!(io_children, load(io_child))
             io_child = unsafe_load(io_child).next_sibling
         end
     end
-    @show io_children
 
     topo = Object(type_, os_index, name, attr, mem, depth, logical_index, children, memory_children, io_children)
     return topo
