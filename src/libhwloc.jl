@@ -183,6 +183,12 @@ struct PCIDevAttr <: Attribute
     revision::Int
     linkspeed::Float32
 end
+function PCIDevAttr(ha::hwloc_pcidev_attr_s)
+    return PCIDevAttr(
+        ha.domain, ha.bus, ha.dev, ha.func, ha.class_id,
+        ha.vendor_id, ha.device_id, ha.subvendor_id, ha.subdevice_id,
+        ha.revision, ha.linkspeed)
+end
 # TODO: expand this
 show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
 
@@ -232,7 +238,8 @@ function load_attr(hattr::Ptr{Cvoid}, type_::Symbol)
     elseif type_==:Bridge
         return NullAttr()
     elseif type_==:PCI_Device
-        return NullAttr()
+        ha = unsafe_load(convert(Ptr{hwloc_pcidev_attr_s}, hattr))
+        return PCIDevAttr(ha)
     elseif type_==:OS_Device
         return NullAttr()
     elseif type_==:Die
