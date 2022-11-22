@@ -1581,7 +1581,8 @@ const HWLOC_VERSION_RELEASE = 0
 
 const HWLOC_VERSION_GREEK = ""
 
-const __hwloc_restrict = __restrict
+# TODO: this throws an error, should it even be included?
+# const __hwloc_restrict = __restrict
 
 # Skipping MacroDefinition: __hwloc_inline __inline__
 
@@ -1595,31 +1596,31 @@ const GCC_ABOVE_3_3 = 1
 
 const GCC_ABOVE_3_4 = 1
 
-const __HWLOC_HAVE_ATTRIBUTE_UNUSED = GXX_ABOVE_3_4 || GCC_ABOVE_2_95
+const __HWLOC_HAVE_ATTRIBUTE_UNUSED = GXX_ABOVE_3_4 | GCC_ABOVE_2_95
 
 # Skipping MacroDefinition: __hwloc_attribute_unused __attribute__ ( ( __unused__ ) )
 
-const __HWLOC_HAVE_ATTRIBUTE_MALLOC = GXX_ABOVE_3_4 || GCC_ABOVE_2_96
+const __HWLOC_HAVE_ATTRIBUTE_MALLOC = GXX_ABOVE_3_4 | GCC_ABOVE_2_96
 
 # Skipping MacroDefinition: __hwloc_attribute_malloc __attribute__ ( ( __malloc__ ) )
 
-const __HWLOC_HAVE_ATTRIBUTE_CONST = GXX_ABOVE_3_4 || GCC_ABOVE_2_95
+const __HWLOC_HAVE_ATTRIBUTE_CONST = GXX_ABOVE_3_4 | GCC_ABOVE_2_95
 
 # Skipping MacroDefinition: __hwloc_attribute_const __attribute__ ( ( __const__ ) )
 
-const __HWLOC_HAVE_ATTRIBUTE_PURE = GXX_ABOVE_3_4 || GCC_ABOVE_2_96
+const __HWLOC_HAVE_ATTRIBUTE_PURE = GXX_ABOVE_3_4 | GCC_ABOVE_2_96
 
 # Skipping MacroDefinition: __hwloc_attribute_pure __attribute__ ( ( __pure__ ) )
 
-const __HWLOC_HAVE_ATTRIBUTE_DEPRECATED = GXX_ABOVE_3_4 || GCC_ABOVE_3_3
+const __HWLOC_HAVE_ATTRIBUTE_DEPRECATED = GXX_ABOVE_3_4 | GCC_ABOVE_3_3
 
 # Skipping MacroDefinition: __hwloc_attribute_deprecated __attribute__ ( ( __deprecated__ ) )
 
-const __HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS = GXX_ABOVE_3_4 || GCC_ABOVE_3_3
+const __HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS = GXX_ABOVE_3_4 | GCC_ABOVE_3_3
 
 # Skipping MacroDefinition: __hwloc_attribute_may_alias __attribute__ ( ( __may_alias__ ) )
 
-const __HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT = GXX_ABOVE_3_4 || GCC_ABOVE_3_4
+const __HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT = GXX_ABOVE_3_4 | GCC_ABOVE_3_4
 
 # Skipping MacroDefinition: __hwloc_attribute_warn_unused_result __attribute__ ( ( __warn_unused_result__ ) )
 
@@ -1633,9 +1634,9 @@ const hwloc_thread_t = pthread_t
 
 const HWLOC_SYM_TRANSFORM = 0
 
-const HWLOC_SYM_PREFIX = hwloc_
+const HWLOC_SYM_PREFIX = "hwloc_"
 
-const HWLOC_SYM_PREFIX_CAPS = HWLOC_
+const HWLOC_SYM_PREFIX_CAPS = "HWLOC_"
 
 const HWLOC_API_VERSION = 0x00020800
 
@@ -1643,9 +1644,12 @@ const HWLOC_COMPONENT_ABI = 7
 
 const HWLOC_OBJ_TYPE_MIN = HWLOC_OBJ_MACHINE
 
+const INT_MAX = typemax(Int64)
 const HWLOC_TYPE_UNORDERED = INT_MAX
 
-const HWLOC_UNKNOWN_INDEX = unsigned - 1
+# TODO: The originial C defined HWLOC_UNKNOWN_INDEX as `(unsigned)-1` -- odd
+# const HWLOC_UNKNOWN_INDEX = unsigned - 1
+const HWLOC_UNKNOWN_INDEX = INT_MAX
 
 const HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM = HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED
 
