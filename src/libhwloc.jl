@@ -1581,7 +1581,7 @@ const HWLOC_VERSION_RELEASE = 0
 
 const HWLOC_VERSION_GREEK = ""
 
-# TODO: this throws an error, should it even be included?
+# Skip: restrict:
 # const __hwloc_restrict = __restrict
 
 # Skipping MacroDefinition: __hwloc_inline __inline__
@@ -1647,7 +1647,7 @@ const HWLOC_OBJ_TYPE_MIN = HWLOC_OBJ_MACHINE
 const INT_MAX = typemax(Int64)
 const HWLOC_TYPE_UNORDERED = INT_MAX
 
-# TODO: The originial C defined HWLOC_UNKNOWN_INDEX as `(unsigned)-1` -- odd
+# TODO: The originial C defined HWLOC_UNKNOWN_INDEX as `(unsigned)-1`
 # const HWLOC_UNKNOWN_INDEX = unsigned - 1
 const HWLOC_UNKNOWN_INDEX = INT_MAX
 
