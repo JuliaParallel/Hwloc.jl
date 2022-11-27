@@ -8,8 +8,8 @@ using ..LibHwloc:
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
 # character). Any names listed here will be capitalized as stated below:
 const special_capitalization = String[
-    "PU", "L1Cache", "L2Cache", "L3Cache", "L4Cache", "I1Cache", "I2Cache",
-    "I3Cache", "NUMANode", "PCI_Device", "OS_Device", "MemCache", "GPU", "DMA",
+    "PU", "L1Cache", "L2Cache", "L3Cache", "L4Cache", "L1ICache", "L2ICache",
+    "L3ICache", "NUMANode", "PCI_Device", "OS_Device", "MemCache", "GPU", "DMA",
     "CoProc", "PIC"
 ]
 
@@ -117,7 +117,7 @@ function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
     elseif type_==:Socket
         return NullAttr()
     elseif type_ ∈ [:Cache, :L1Cache, :L2Cache, :L3Cache, :L4Cache, :L5Cache,
-                    :I1Cache, :I2Cache, :I3Cache]
+                    :L1ICache, :L2ICache, :L3ICache]
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return CacheAttr(ha.size, ha.depth, ha.linesize, ha.associativity,
                          cache_types[ha.type+1])
