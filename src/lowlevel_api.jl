@@ -2,7 +2,11 @@ using ..LibHwloc:
     hwloc_cpuset_t, hwloc_nodeset_t, hwloc_obj_type_t, hwloc_obj_cache_type_t,
     hwloc_obj_bridge_type_t, hwloc_obj_osdev_type_t, hwloc_distances_s,
     hwloc_obj, hwloc_obj_t, hwloc_obj_attr_u, hwloc_cache_attr_s,
-    hwloc_group_attr_s, hwloc_pcidev_attr_s, hwloc_osdev_attr_s
+    hwloc_group_attr_s, hwloc_pcidev_attr_s, hwloc_osdev_attr_s,
+    hwloc_topology_t, hwloc_topology_init, hwloc_topology_load,
+    hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
+    hwloc_get_obj_by_depth, hwloc_topology_destroy
+
 
 # List of special capitalizations -- cenum_name_to_symbol will by default
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
@@ -214,8 +218,10 @@ function load(hobj::hwloc_obj_t)
     # topo.os_level = obj.os_level
 
     obj_children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
-    ccall(:memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t), obj_children,
-          obj.children, obj.arity*sizeof(Ptr{Cvoid}))
+    ccall(
+        :memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
+        obj_children, obj.children, obj.arity*sizeof(Ptr{Cvoid})
+    )
 
     children = Object[load(child) for child in obj_children]
 
@@ -235,24 +241,21 @@ end
 Load the system topology by calling into libhwloc.
 """
 function topology_load()
-    htopop = Ref{Ptr{Cvoid}}()
-    ierr = ccall((:hwloc_topology_init, libhwloc), Cint, (Ptr{Cvoid},), htopop)
+    htopop = Ref{hwloc_topology_t}()
+    ierr = hwloc_topology_init(htopop)
     @assert ierr==0
     htopo = htopop[]
-    ierr = ccall((:hwloc_topology_load, libhwloc), Cint, (Ptr{Cvoid},), htopo)
+    ierr = hwloc_topology_load(htopo)
     @assert ierr==0
 
-    depth = ccall((:hwloc_topology_get_depth, libhwloc), Cint, (Ptr{Cvoid},),
-                  htopo)
+    depth = hwloc_topology_get_depth(htopo)
     @assert depth >= 1
-    nroots = ccall((:hwloc_get_nbobjs_by_depth, libhwloc), Cint,
-                   (Ptr{Cvoid}, Cuint), htopo, 0)
+    nroots = hwloc_get_nbobjs_by_depth(htopo, 0)
     @assert nroots == 1
-    root = ccall((:hwloc_get_obj_by_depth, libhwloc), hwloc_obj_t,
-                 (Ptr{Cvoid}, Cuint, Cuint), htopo, 0, 0)
+    root = hwloc_get_obj_by_depth(htopo, 0, 0)
     topo = load(root)
 
-    ccall((:hwloc_topology_destroy, libhwloc), Cvoid, (Ptr{Cvoid},), htopo)
+    hwloc_topology_destroy(htopo)
 
     return topo
 end

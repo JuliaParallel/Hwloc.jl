@@ -1,8 +1,11 @@
+using ..LibHwloc: hwloc_get_api_version
+
+
 """
 Returns the API version of libhwloc.
 """
 function get_api_version()
-    version = ccall((:hwloc_get_api_version, libhwloc), Cuint, ())
+    version = hwloc_get_api_version()
     patch = version % 256
     version = version ÷ 256
     minor = version % 256
