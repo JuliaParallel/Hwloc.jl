@@ -7,6 +7,10 @@ using ..LibHwloc:
     hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
     hwloc_get_obj_by_depth, hwloc_topology_destroy
 
+# Compatibility constants:
+const I1Cache = :L1ICache
+const I2Cache = :L2ICache
+const I3Cache = :L3ICache
 
 # List of special capitalizations -- cenum_name_to_symbol will by default
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
@@ -218,10 +222,8 @@ function load(hobj::hwloc_obj_t)
     # topo.os_level = obj.os_level
 
     obj_children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
-    ccall(
-        :memcpy, Ptr{Cvoid}, (Ptr{Cvoid}, Ptr{Cvoid}, Csize_t),
-        obj_children, obj.children, obj.arity*sizeof(Ptr{Cvoid})
-    )
+    obj_children_r = Base.unsafe_convert(Ptr{hwloc_obj_t}, obj_children)
+    unsafe_copyto!(obj_children_r, obj.children, obj.arity*sizeof(hwloc_obj_t))
 
     children = Object[load(child) for child in obj_children]
 
