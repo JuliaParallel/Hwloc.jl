@@ -223,7 +223,7 @@ function load(hobj::hwloc_obj_t)
 
     obj_children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
     obj_children_r = Base.unsafe_convert(Ptr{hwloc_obj_t}, obj_children)
-    unsafe_copyto!(obj_children_r, obj.children, obj.arity*sizeof(hwloc_obj_t))
+    unsafe_copyto!(obj_children_r, obj.children, obj.arity)
 
     children = Object[load(child) for child in obj_children]
 
