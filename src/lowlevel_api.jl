@@ -7,11 +7,6 @@ using ..LibHwloc:
     hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
     hwloc_get_obj_by_depth, hwloc_topology_destroy
 
-# Compatibility constants:
-const I1Cache = :L1ICache
-const I2Cache = :L2ICache
-const I3Cache = :L3ICache
-
 # List of special capitalizations -- cenum_name_to_symbol will by default
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
 # character). Any names listed here will be capitalized as stated below:
