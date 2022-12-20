@@ -5,6 +5,7 @@ using Statistics
 import Base: show, IteratorSize, IteratorEltype, isempty, eltype, iterate
 
 include("libhwloc.jl")
+include("lowlevel_api.jl")
 include("highlevel_api.jl")
 
 export topology, gettopology, topology_info, getinfo, print_topology, topology_graphical
