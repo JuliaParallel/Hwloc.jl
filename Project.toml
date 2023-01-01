@@ -1,15 +1,17 @@
 name = "Hwloc"
 uuid = "0e44f5e4-bd66-52a0-8798-143a42290a1d"
 authors = ["Erik Schnetter <schnetter@gmail.com>"]
-version = "2.2.0"
+version = "3.0.0"
 
 [deps]
+CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 Hwloc_jll = "e33a78d0-f292-5ffc-b300-72abe9b543c8"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-julia = "1.6"
 Hwloc_jll = "2.8"
+julia = "1.6"
+CEnum = "0.4"
 
 [extras]
 CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
