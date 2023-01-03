@@ -50,6 +50,10 @@ function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "
             print_topology(io, child; indent = indent*repeat(" ", 4), newline=true)
         end
     end
+
+    for child in obj.io_children
+        print_topology(io, child; indent=indent*repeat(" ", 4), newline=true)
+    end
     return nothing
 end
 print_topology(obj::Object) = print_topology(stdout, obj)
@@ -57,12 +61,15 @@ print_topology(obj::Object) = print_topology(stdout, obj)
 """
 Returns the top-level system topology `Object`.
 
-On first call, it loads the topology by querying
-libhwloc and caches the result.
+On first call, it loads the topology by querying libhwloc and caches the result.
+Pass `reload=true` in order to force reload.
 """
-function gettopology()
-    if !isassigned(machine_topology)
-        machine_topology[] = topology_load()
+function gettopology(htopo=nothing; reload=false)
+    if reload || (!isassigned(machine_topology))
+        if isnothing(htopo)
+            htopo=topology_init()
+        end
+        machine_topology[] = topology_load(htopo)
     end
 
     return machine_topology[]
@@ -71,7 +78,7 @@ end
 """
 Prints the system topology as a tree.
 """
-topology() = print_topology(gettopology())
+topology(htopo=nothing) = print_topology(gettopology(htopo))
 
 """
 Prints a summary of the system topology (loosely similar to `hwloc-info`).
@@ -306,6 +313,6 @@ The quality of the result might depend on the used terminal and might vary betwe
 **Note:** The specific visualization may change between minor versions.
 """
 function topology_graphical()
-    run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
+    run(`$(lstopo_no_graphics()) --no-legend --of txt`)
     return nothing
 end

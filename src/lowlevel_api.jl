@@ -98,7 +98,9 @@ function PCIDevAttr(ha::hwloc_pcidev_attr_s)
         ha.revision, ha.linkspeed)
 end
 # TODO: expand this
-show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
+function show(io::IO, a::PCIDevAttr)
+    print(io, "PCIDev(domain=$(a.domain), bus=$(a.bus), func=$(a.func), class_id=$(a.class_id), vendor_id=$(a.vendor_id), device_id=$(a.device_id), subvendor_id=$(a.subvendor_id), subdevice_id=$(a.subdevice_id), revision=$(a.revision), linkspeed=$(a.linkspeed))")
+end
 
 # type BridgeAttr <: Attribute end
 
@@ -234,9 +236,6 @@ function load(hobj::hwloc_obj_t)
     children = Object[load(child) for child in obj_children]
 
     memory_children = Object[]
-    # if obj.memory_arity != C_NULL && obj.memory_first_child != C_NULL
-    #     push!(memory_children, load(obj.memory_first_child))
-    # end
     if obj.memory_arity != 0
         memory_child = obj.memory_first_child 
         while memory_child != C_NULL
@@ -262,9 +261,14 @@ function load(hobj::hwloc_obj_t)
 end
 
 
-function topology_init()
+function topology_init(;get_io=true)
     r_htopo = Ref{hwloc_topology_t}()
     hwloc_topology_init(r_htopo)
+    if get_io
+        hwloc_topology_set_io_types_filter(
+            r_htopo[], LibHwloc.HWLOC_TYPE_FILTER_KEEP_ALL
+        )
+    end
     return r_htopo[]
 end
 
