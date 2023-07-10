@@ -235,7 +235,7 @@ const hwloc_nodeset_t = hwloc_bitmap_t
 
 const hwloc_const_nodeset_t = hwloc_const_bitmap_t
 
-# TODO: doe we need this?
+# TODO: do we need this?
 # struct hwloc_obj_memory_page_type_s
 #     size::Culonglong
 #     count::Culonglong

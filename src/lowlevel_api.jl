@@ -2,12 +2,12 @@ using ..LibHwloc:
     hwloc_cpuset_t, hwloc_nodeset_t, hwloc_obj_type_t, hwloc_obj_cache_type_t,
     hwloc_obj_bridge_type_t, hwloc_obj_osdev_type_t, hwloc_distances_s,
     hwloc_obj, hwloc_obj_t, hwloc_obj_attr_u, hwloc_cache_attr_s,
-    hwloc_group_attr_s, hwloc_pcidev_attr_s, hwloc_osdev_attr_s,
-    hwloc_topology_t, hwloc_topology_init, hwloc_topology_load,
-    hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth, hwloc_get_obj_by_depth,
-    hwloc_topology_destroy, hwloc_type_filter_e, hwloc_topology_set_type_filter,
-    hwloc_topology_get_type_filter, hwloc_topology_set_all_types_filter,
-    hwloc_topology_set_cache_types_filter,
+    hwloc_group_attr_s, hwloc_bridge_attr_s, hwloc_pcidev_attr_s,
+    hwloc_osdev_attr_s, hwloc_topology_t, hwloc_topology_init,
+    hwloc_topology_load, hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
+    hwloc_get_obj_by_depth, hwloc_topology_destroy, hwloc_type_filter_e,
+    hwloc_topology_set_type_filter, hwloc_topology_get_type_filter,
+    hwloc_topology_set_all_types_filter, hwloc_topology_set_cache_types_filter,
     hwloc_topology_set_icache_types_filter, hwloc_topology_set_io_types_filter,
     hwloc_topology_set_userdata, hwloc_topology_get_userdata
 
@@ -42,15 +42,14 @@ for x in instances(hwloc_obj_cache_type_t)
     push!(cache_types, cenum_name_to_symbol(x, "HWLOC_OBJ_CACHE_"))
 end
 
-# const bridge_types
 bridge_types = Symbol[]
 for x in instances(hwloc_obj_bridge_type_t)
-    push!(cache_types, cenum_name_to_symbol(x, "HWLOC_OBJ_BRIDGE_"))
+    push!(bridge_types, cenum_name_to_symbol(x, "HWLOC_OBJ_BRIDGE_"))
 end
 
 osdev_types = Symbol[]
 for x in instances(hwloc_obj_osdev_type_t)
-    push!(cache_types, cenum_name_to_symbol(x, "HWLOC_OBJ_OSDEV_"))
+    push!(osdev_types, cenum_name_to_symbol(x, "HWLOC_OBJ_OSDEV_"))
 end
 
 abstract type Attribute end
@@ -67,8 +66,14 @@ struct CacheAttr <: Attribute
     type_::Symbol
 end
 function show(io::IO, a::CacheAttr)
-    print(io, "Cache{size=$(a.size),depth=$(a.depth),linesize=$(a.linesize),",
-          "associativity=$(a.associativity),type=$(string(a.type_))}")
+    print(
+        io,
+        "Cache{size=$(a.size), "             *
+        "depth=$(a.depth), "                 *
+        "linesize=$(a.linesize), "           *
+        "associativity=$(a.associativity), " *
+        "type=$(string(a.type_))}"
+    )
 end
 
 struct GroupAttr <: Attribute
@@ -93,16 +98,36 @@ struct PCIDevAttr <: Attribute
 end
 function PCIDevAttr(ha::hwloc_pcidev_attr_s)
     return PCIDevAttr(
-        ha.domain, ha.bus, ha.dev, ha.func, ha.class_id,
-        ha.vendor_id, ha.device_id, ha.subvendor_id, ha.subdevice_id,
-        ha.revision, ha.linkspeed)
+        ha.domain, ha.bus, ha.dev, ha.func, ha.class_id, ha.vendor_id,
+        ha.device_id, ha.subvendor_id, ha.subdevice_id, ha.revision,
+        ha.linkspeed
+    )
 end
-# TODO: expand this
 function show(io::IO, a::PCIDevAttr)
-    print(io, "PCIDev(domain=$(a.domain), bus=$(a.bus), func=$(a.func), class_id=$(a.class_id), vendor_id=$(a.vendor_id), device_id=$(a.device_id), subvendor_id=$(a.subvendor_id), subdevice_id=$(a.subdevice_id), revision=$(a.revision), linkspeed=$(a.linkspeed))")
+    print(
+        io,
+        "PCIDev(domain=$(a.domain), "      *
+        "bus=$(a.bus), "                   *
+        "func=$(a.func), "                 *
+        "class_id=$(a.class_id), "         *
+        "vendor_id=$(a.vendor_id), "       *
+        "device_id=$(a.device_id), "       *
+        "subvendor_id=$(a.subvendor_id), " *
+        "subdevice_id=$(a.subdevice_id), " *
+        "revision=$(a.revision), "         *
+        "linkspeed=$(a.linkspeed))"
+    )
 end
 
-# type BridgeAttr <: Attribute end
+struct BridgeAttr <: Attribute
+    data::NTuple{40, UInt8}
+end
+function BridgeAttr(ha::hwloc_bridge_attr_s)
+    return BridgeAttr(ha.data)
+end
+function show(io::IO, a::BridgeAttr)
+    print(io, "BridgeAttr{data=$(string(a.data))}")
+end
 
 struct OSDevAttr <: Attribute
     type_::Symbol
@@ -146,9 +171,13 @@ function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
     elseif type_==:Misc
         error("not implemented")
     elseif type_==:Bridge
-        return NullAttr()
+        ha = unsafe_load(convert(Ptr{hwloc_bridge_attr_s}, hattr))
+        println(ha)
+        return BridgeAttr(ha)
+        # return NullAttr()
     elseif type_==:PCI_Device
         ha = unsafe_load(convert(Ptr{hwloc_pcidev_attr_s}, hattr))
+        println(ha)
         return PCIDevAttr(ha)
     elseif type_==:OS_Device
         return NullAttr()
