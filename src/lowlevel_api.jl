@@ -9,7 +9,8 @@ using ..LibHwloc:
     hwloc_topology_set_type_filter, hwloc_topology_get_type_filter,
     hwloc_topology_set_all_types_filter, hwloc_topology_set_cache_types_filter,
     hwloc_topology_set_icache_types_filter, hwloc_topology_set_io_types_filter,
-    hwloc_topology_set_userdata, hwloc_topology_get_userdata
+    hwloc_topology_set_userdata, hwloc_topology_get_userdata,
+    var"##Ctag#349", var"##Ctag#350"
 
 # List of special capitalizations -- cenum_name_to_symbol will by default
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
@@ -120,13 +121,28 @@ function show(io::IO, a::PCIDevAttr)
 end
 
 struct BridgeAttr <: Attribute
-    data::NTuple{40, UInt8}
+    upstream::var"##Ctag#349"
+    upstream_type::hwloc_obj_bridge_type_t
+    downstream::var"##Ctag#350"
+    downstream_type::hwloc_obj_bridge_type_t
+    depth::UInt
 end
 function BridgeAttr(ha::hwloc_bridge_attr_s)
-    return BridgeAttr(ha.data)
+    return BridgeAttr(
+        ha.upstream, ha.upstream_type,
+        ha.downstream, ha.downstream_type,
+        ha.depth
+    )
 end
 function show(io::IO, a::BridgeAttr)
-    print(io, "BridgeAttr{data=$(string(a.data))}")
+    print(
+        io,
+        "BridgeAttr{upstream=$(string(a.upstream)), "    *
+        "upstream_type=$(string(a.upstream_type)), "     *
+        "downstream=$(string(a.downstream)), "           *
+        "downstream_type=$(string(a.downstream_type)), " *
+        "}"
+    )
 end
 
 struct OSDevAttr <: Attribute
@@ -172,12 +188,9 @@ function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
         error("not implemented")
     elseif type_==:Bridge
         ha = unsafe_load(convert(Ptr{hwloc_bridge_attr_s}, hattr))
-        println(ha)
         return BridgeAttr(ha)
-        # return NullAttr()
     elseif type_==:PCI_Device
         ha = unsafe_load(convert(Ptr{hwloc_pcidev_attr_s}, hattr))
-        println(ha)
         return PCIDevAttr(ha)
     elseif type_==:OS_Device
         return NullAttr()
