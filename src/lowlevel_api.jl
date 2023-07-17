@@ -12,6 +12,9 @@ using ..LibHwloc:
     hwloc_topology_set_userdata, hwloc_topology_get_userdata,
     var"##Ctag#349", var"##Ctag#350"
 
+using ..LibHwlocExtensions:
+    hwloc_pci_class_string
+
 # List of special capitalizations -- cenum_name_to_symbol will by default
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
 # character). Any names listed here will be capitalized as stated below:
@@ -110,7 +113,7 @@ function show(io::IO, a::PCIDevAttr)
         "PCIDev(domain=$(a.domain), "      *
         "bus=$(a.bus), "                   *
         "func=$(a.func), "                 *
-        "class_id=$(a.class_id), "         *
+        "class_id=$(hwloc_pci_class_string(a.class_id)), "         *
         "vendor_id=$(a.vendor_id), "       *
         "device_id=$(a.device_id), "       *
         "subvendor_id=$(a.subvendor_id), " *
@@ -137,11 +140,10 @@ end
 function show(io::IO, a::BridgeAttr)
     print(
         io,
-        "BridgeAttr{upstream=$(string(a.upstream)), "    *
-        "upstream_type=$(string(a.upstream_type)), "     *
-        "downstream=$(string(a.downstream)), "           *
-        "downstream_type=$(string(a.downstream_type)), " *
-        "}"
+        "BridgeAttr(US=$(hwloc_pci_class_string(a.upstream.pci.class_id)), " *
+        "upstream_type=$(string(a.upstream_type)), "                         *
+        "downstream_type=$(string(a.downstream_type)) "                      *
+        ")"
     )
 end
 
@@ -260,6 +262,7 @@ function load(hobj::hwloc_obj_t)
     os_index = mod(obj.os_index, Cint)
 
     name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
+    println(name)
 
     attr = load_attr(obj.attr, type_)
 
