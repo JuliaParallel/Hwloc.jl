@@ -110,15 +110,15 @@ end
 function show(io::IO, a::PCIDevAttr)
     print(
         io,
-        "PCIDev(domain=$(a.domain), "      *
-        "bus=$(a.bus), "                   *
-        "func=$(a.func), "                 *
-        "class_id=$(hwloc_pci_class_string(a.class_id)), "         *
-        "vendor_id=$(a.vendor_id), "       *
-        "device_id=$(a.device_id), "       *
-        "subvendor_id=$(a.subvendor_id), " *
-        "subdevice_id=$(a.subdevice_id), " *
-        "revision=$(a.revision), "         *
+        "PCIDev(domain=$(a.domain), "                      *
+        "bus=$(a.bus), "                                   *
+        "func=$(a.func), "                                 *
+        "class_id=$(hwloc_pci_class_string(a.class_id)), " *
+        "vendor_id=$(a.vendor_id), "                       *
+        "device_id=$(a.device_id), "                       *
+        "subvendor_id=$(a.subvendor_id), "                 *
+        "subdevice_id=$(a.subdevice_id), "                 *
+        "revision=$(a.revision), "                         *
         "linkspeed=$(a.linkspeed))"
     )
 end
@@ -262,7 +262,6 @@ function load(hobj::hwloc_obj_t)
     os_index = mod(obj.os_index, Cint)
 
     name = obj.name == C_NULL ? "" : unsafe_string(obj.name)
-    println(name)
 
     attr = load_attr(obj.attr, type_)
 
@@ -295,6 +294,15 @@ function load(hobj::hwloc_obj_t)
         while io_child != C_NULL
             push!(io_children, load(io_child))
             io_child = unsafe_load(io_child).next_sibling
+        end
+    end
+
+    misc_children = Object[]
+    if obj.misc_arity != 0
+        misc_child = obj.misc_first_child
+        while misc_child != C_NULL
+            push!(misc_children, load(misc_child))
+            misc_child = unsafe_load(misc_child).next_sibling
         end
     end
 

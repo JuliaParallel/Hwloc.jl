@@ -1,4 +1,4 @@
-using ..LibHwloc: hwloc_get_api_version
+using ..LibHwloc: hwloc_get_api_version, HWLOC_OBJ_BRIDGE_HOST
 
 
 """
@@ -21,20 +21,30 @@ Prints the topology of the given `obj` as a tree to `io`.
 """
 function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "", newline = false, prefix = "")
     t = hwloc_typeof(obj)
+
+    # println("t=$(t) name=$(obj.name)")
+
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
     if t in (:L1Cache, :L2Cache, :L3Cache, :L1ICache)
         tstr = first(string(t), 2)
         attrstr = "("*_bytes2string(obj.attr.size)*")"
+    elseif t == :Bridge
+        if obj.attr.upstream_type == HWLOC_OBJ_BRIDGE_HOST
+            tstr = "HostBridge"
+        else
+            tstr = "PCIBridge"
+        end
     else
         tstr = string(t)
     end
 
     newline && print(io, "\n", indent)
-    print(io, prefix, tstr, " ",
-        idxstr,
-        attrstr, obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : "")
+    print(
+        io, prefix, tstr, " ", idxstr, attrstr,
+        obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : ""
+    )
 
     for memchild in obj.memory_children
         memstr = "("*_bytes2string(memchild.mem)*")"
