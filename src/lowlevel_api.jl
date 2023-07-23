@@ -9,8 +9,8 @@ using ..LibHwloc:
     hwloc_topology_set_type_filter, hwloc_topology_get_type_filter,
     hwloc_topology_set_all_types_filter, hwloc_topology_set_cache_types_filter,
     hwloc_topology_set_icache_types_filter, hwloc_topology_set_io_types_filter,
-    hwloc_topology_set_userdata, hwloc_topology_get_userdata,
-    var"##Ctag#349", var"##Ctag#350"
+    hwloc_topology_set_userdata, hwloc_topology_get_userdata, var"##Ctag#349",
+    var"##Ctag#350"
 
 using ..LibHwlocExtensions:
     hwloc_pci_class_string
@@ -149,10 +149,10 @@ function show(io::IO, a::BridgeAttr)
 end
 
 struct OSDevAttr <: Attribute
-    type_::Symbol
+    type::hwloc_obj_osdev_type_t
 end
 function show(io::IO, a::OSDevAttr)
-    print(io, "OSDev{type=$(string(a.type_))}")
+    print(io, "OSDev{type=$(string(a.type))}")
 end
 
 struct DieAttr <: Attribute
@@ -196,7 +196,8 @@ function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
         ha = unsafe_load(convert(Ptr{hwloc_pcidev_attr_s}, hattr))
         return PCIDevAttr(ha)
     elseif type_==:OS_Device
-        return NullAttr()
+        ha = unsafe_load(convert(Ptr{hwloc_obj_osdev_type_t}, hattr))
+        return OSDevAttr(ha)
     elseif type_==:Die
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return DieAttr(ha.depth)
@@ -210,6 +211,7 @@ end
 
 struct Object
     type_::Symbol
+    subtype::String
     os_index::Int
     name::String
     attr::Attribute
@@ -259,6 +261,7 @@ function load(hobj::hwloc_obj_t)
 
     @assert Integer(obj.type)>=0 && Integer(obj.type)<length(obj_types)
     type_ = obj_types[obj.type+1]
+    subtype = obj.subtype == C_NULL ? "" : unsafe_string(obj.subtype)
 
     os_index = mod(obj.os_index, Cint)
 
@@ -308,8 +311,8 @@ function load(hobj::hwloc_obj_t)
     end
 
     topo = Object(
-        type_, os_index, name, attr, mem, depth, logical_index, children,
-        memory_children, io_children
+        type_, subtype, os_index, name, attr, mem, depth, logical_index,
+        children, memory_children, io_children
     )
     return topo
 end

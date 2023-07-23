@@ -1,4 +1,6 @@
-using ..LibHwloc: hwloc_get_api_version, HWLOC_OBJ_BRIDGE_HOST
+using ..LibHwloc: hwloc_get_api_version, HWLOC_OBJ_BRIDGE_HOST,
+    HWLOC_OBJ_OSDEV_BLOCK, HWLOC_OBJ_OSDEV_GPU, HWLOC_OBJ_OSDEV_NETWORK,
+    HWLOC_OBJ_OSDEV_OPENFABRICS, HWLOC_OBJ_OSDEV_DMA, HWLOC_OBJ_OSDEV_COPROC
 
 using Printf
 
@@ -15,7 +17,32 @@ function get_api_version()
     VersionNumber(major, minor, patch)
 end
 
-const minimal_classes = ["VGA", "NVMExp", "Network"]
+const minimal_classes = ["VGA", "NVMExp", "Network", "Other"]
+subtype_str(obj) = obj.subtype == "" ? "" : "($(obj.subtype))"
+
+function is_visible(obj::Object; minimal=true)
+    t = hwloc_typeof(obj)
+
+    if t == :Bridge
+        for child in obj.io_children
+            if is_visible(child)
+                return true
+            end
+        end
+        return false
+    end
+
+    if t == :PCI_Device
+        class_string = hwloc_pci_class_string(obj.attr.class_id)
+        if minimal
+            return class_string in minimal_classes
+        else
+            return true
+        end
+    end
+
+    return true
+end
 
 """
     print_topology([io::IO = stdout, obj::Object = gettopology()])
@@ -28,14 +55,12 @@ function print_topology(
     )
     t = hwloc_typeof(obj)
 
-    # println("t=$(t) name=$(obj.name)")
-
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
     # this is set to false whenever minimal == true and the PCI class_id strings
     # don't match the minimal_classes list
-    print_device = true
+    print_device = is_visible(obj; minimal=minimal)
 
     if t in (:L1Cache, :L2Cache, :L3Cache, :L1ICache)
         tstr = first(string(t), 2)
@@ -55,8 +80,22 @@ function print_topology(
             "%s%02x:%02x.%01x",
             Char(obj.attr.domain), obj.attr.bus, obj.attr.dev, obj.attr.func
         ) * " ($(class_string))"
-        if minimal
-            print_device = (class_string in minimal_classes)
+    elseif t == :OS_Device
+        attrstr = "\"$(obj.name)\""
+        tstr = string(t) * " " * if obj.attr.type == HWLOC_OBJ_OSDEV_BLOCK
+            "Block$(subtype_str(obj))"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_GPU
+            "GPU"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_NETWORK
+            "Net"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_OPENFABRICS
+            "OpenFabrics"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_DMA
+            "DMA"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_COPROC
+            "CoProc"
+        else
+            string(obj.attr)
         end
     else
         tstr = string(t)
@@ -69,6 +108,8 @@ function print_topology(
             io, prefix, tstr, " ", idxstr, attrstr,
             obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : ""
         )
+    else
+        return nothing
     end
 
     for memchild in obj.memory_children
@@ -89,6 +130,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(io, child; indent=indent*repeat(" ", 4), newline=true)
     end
+
     return nothing
 end
 print_topology(obj::Object) = print_topology(stdout, obj)
