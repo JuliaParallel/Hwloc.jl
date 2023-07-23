@@ -1,5 +1,6 @@
 using ..LibHwloc: hwloc_get_api_version, HWLOC_OBJ_BRIDGE_HOST
 
+using Printf
 
 """
 Returns the API version of libhwloc.
@@ -14,12 +15,17 @@ function get_api_version()
     VersionNumber(major, minor, patch)
 end
 
+const minimal_classes = ["VGA", "NVMExp", "Network"]
+
 """
     print_topology([io::IO = stdout, obj::Object = gettopology()])
 
 Prints the topology of the given `obj` as a tree to `io`.
 """
-function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "", newline = false, prefix = "")
+function print_topology(
+        io::IO = stdout, obj::Object = gettopology();
+        indent = "", newline = false, prefix = "", minimal=true
+    )
     t = hwloc_typeof(obj)
 
     # println("t=$(t) name=$(obj.name)")
@@ -27,24 +33,43 @@ function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
 
+    # this is set to false whenever minimal == true and the PCI class_id strings
+    # don't match the minimal_classes list
+    print_device = true
+
     if t in (:L1Cache, :L2Cache, :L3Cache, :L1ICache)
         tstr = first(string(t), 2)
         attrstr = "("*_bytes2string(obj.attr.size)*")"
     elseif t == :Bridge
         if obj.attr.upstream_type == HWLOC_OBJ_BRIDGE_HOST
-            tstr = "HostBridge"
+            tstr    = "HostBridge"
+            attrstr = ""
         else
             tstr = "PCIBridge"
+            attrstr = ""
+        end
+    elseif t == :PCI_Device
+        class_string = hwloc_pci_class_string(obj.attr.class_id)
+        tstr    = "PCI"
+        attrstr = @sprintf(
+            "%s%02x:%02x.%01x",
+            Char(obj.attr.domain), obj.attr.bus, obj.attr.dev, obj.attr.func
+        ) * " ($(class_string))"
+        if minimal
+            print_device = (class_string in minimal_classes)
         end
     else
         tstr = string(t)
+        attrstr = obj.name
     end
 
-    newline && print(io, "\n", indent)
-    print(
-        io, prefix, tstr, " ", idxstr, attrstr,
-        obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : ""
-    )
+    if print_device
+        newline && print(io, "\n", indent)
+        print(
+            io, prefix, tstr, " ", idxstr, attrstr,
+            obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : ""
+        )
+    end
 
     for memchild in obj.memory_children
         memstr = "("*_bytes2string(memchild.mem)*")"

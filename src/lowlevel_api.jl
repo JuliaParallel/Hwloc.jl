@@ -112,6 +112,7 @@ function show(io::IO, a::PCIDevAttr)
         io,
         "PCIDev(domain=$(a.domain), "                      *
         "bus=$(a.bus), "                                   *
+        "dev=$(a.dev), "                                   *
         "func=$(a.func), "                                 *
         "class_id=$(hwloc_pci_class_string(a.class_id)), " *
         "vendor_id=$(a.vendor_id), "                       *
