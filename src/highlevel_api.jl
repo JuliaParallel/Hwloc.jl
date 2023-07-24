@@ -17,7 +17,7 @@ function get_api_version()
     VersionNumber(major, minor, patch)
 end
 
-const minimal_classes = ["VGA", "NVMExp", "Network", "Other"]
+const minimal_classes = ["VGA", "NVMExp", "Network", "Ethernet", "Other"]
 subtype_str(obj) = obj.subtype == "" ? "" : "($(obj.subtype))"
 
 function is_visible(obj::Object; minimal=true)
@@ -33,8 +33,8 @@ function is_visible(obj::Object; minimal=true)
     end
 
     if t == :PCI_Device
-        class_string = hwloc_pci_class_string(obj.attr.class_id)
         if minimal
+            class_string = hwloc_pci_class_string(obj.attr.class_id)
             return class_string in minimal_classes
         else
             return true
