@@ -82,7 +82,7 @@ function print_topology(
         ) * " ($(class_string))"
     elseif t == :OS_Device
         attrstr = "\"$(obj.name)\""
-        tstr = string(t) * " " * if obj.attr.type == HWLOC_OBJ_OSDEV_BLOCK
+        tstr = if obj.attr.type == HWLOC_OBJ_OSDEV_BLOCK
             "Block$(subtype_str(obj))"
         elseif obj.attr.type == HWLOC_OBJ_OSDEV_GPU
             "GPU"
@@ -93,7 +93,7 @@ function print_topology(
         elseif obj.attr.type == HWLOC_OBJ_OSDEV_DMA
             "DMA"
         elseif obj.attr.type == HWLOC_OBJ_OSDEV_COPROC
-            "CoProc"
+            "CoProc$(subtype_str(obj))"
         else
             string(obj.attr)
         end
