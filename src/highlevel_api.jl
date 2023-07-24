@@ -17,7 +17,9 @@ function get_api_version()
     VersionNumber(major, minor, patch)
 end
 
-const minimal_classes = ["VGA", "NVMExp", "Network", "Ethernet", "Other"]
+const minimal_classes = [
+    "VGA", "NVMExp", "SATA", "Network", "Ethernet", "InfiniBand", "3D", "Other"
+]
 subtype_str(obj) = obj.subtype == "" ? "" : "($(obj.subtype))"
 
 function is_visible(obj::Object; minimal=true)
