@@ -301,14 +301,16 @@ function load(hobj::hwloc_obj_t)
         end
     end
 
-    misc_children = Object[]
-    if obj.misc_arity != 0
-        misc_child = obj.misc_first_child
-        while misc_child != C_NULL
-            push!(misc_children, load(misc_child))
-            misc_child = unsafe_load(misc_child).next_sibling
-        end
-    end
+    # not needed for now -- unless we want to start putting things (like
+    # processes into the Hwloc tree)
+    # misc_children = Object[]
+    # if obj.misc_arity != 0
+    #     misc_child = obj.misc_first_child
+    #     while misc_child != C_NULL
+    #         push!(misc_children, load(misc_child))
+    #         misc_child = unsafe_load(misc_child).next_sibling
+    #     end
+    # end
 
     topo = Object(
         type_, subtype, os_index, name, attr, mem, depth, logical_index,
