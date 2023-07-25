@@ -30,5 +30,5 @@ AbstractTrees.ParentLinks(::Type{<:HwlocTreeNode}) = StoredParents()
 
 AbstractTrees.parent(n::HwlocTreeNode) = n.parent
 
-AbstractTrees.NodeType(::Type{<:HwlocTreeNode}) where {T} = HasNodeType()
-AbstractTrees.nodetype(::Type{<:HwlocTreeNode}) where {T} = HwlocTreeNode
+AbstractTrees.NodeType(::Type{<:HwlocTreeNode}) = HasNodeType()
+AbstractTrees.nodetype(::Type{<:HwlocTreeNode}) = HwlocTreeNode
