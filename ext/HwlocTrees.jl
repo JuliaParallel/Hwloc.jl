@@ -47,29 +47,29 @@ function AbstractTrees.printnode(io::IO, node::HwlocTreeNode)
     if node.type in (:Package, :Core, :PU)
         label = label * " [L#$(obj.logical_index) P#$(obj.os_index)]"
     elseif node.type == :Bridge
-        if obj.attr.upstream_type == HWLOC_OBJ_BRIDGE_HOST
+        if obj.attr.upstream_type == Hwloc.LibHwloc.HWLOC_OBJ_BRIDGE_HOST
             label = label * " [HostBridge]"
         else
             label = label * " [PCIBridge]"
         end
     elseif node.type == :PCI_Device
-        class_string = hwloc_pci_class_string(obj.attr.class_id)
+        class_string = Hwloc.LibHwlocExtensions.hwloc_pci_class_string(obj.attr.class_id)
         label = label * " [" * @sprintf(
             "%s%02x:%02x.%01x",
             Char(obj.attr.domain), obj.attr.bus, obj.attr.dev, obj.attr.func
         ) * " ($(class_string))]"
     elseif node.type == :OS_Device
-        label = label * " [" * if obj.attr.type == HWLOC_OBJ_OSDEV_BLOCK
-            "Block$(subtype_str(obj))"
-        elseif obj.attr.type == HWLOC_OBJ_OSDEV_GPU
+        label = label * " [" * if obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_BLOCK
+            "Block$(Hwloc.subtype_str(obj))"
+        elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_GPU
             "GPU"
-        elseif obj.attr.type == HWLOC_OBJ_OSDEV_NETWORK
+        elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_NETWORK
             "Net"
-        elseif obj.attr.type == HWLOC_OBJ_OSDEV_OPENFABRICS
+        elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_OPENFABRICS
             "OpenFabrics"
-        elseif obj.attr.type == HWLOC_OBJ_OSDEV_DMA
+        elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_DMA
             "DMA"
-        elseif obj.attr.type == HWLOC_OBJ_OSDEV_COPROC
+        elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_COPROC
             "CoProc$(subtype_str(obj))"
         else
             string(obj.attr)
