@@ -277,11 +277,10 @@ function load(hobj::hwloc_obj_t)
 
     # topo.os_level = obj.os_level
 
-    obj_children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
-    obj_children_r = Base.unsafe_convert(Ptr{hwloc_obj_t}, obj_children)
-    unsafe_copyto!(obj_children_r, obj.children, obj.arity)
-
-    children = Object[load(child) for child in obj_children]
+    children = Object[
+        load(child)
+        for child in unsafe_wrap(Vector{hwloc_obj_t}, obj.children, obj.arity)
+    ]
 
     memory_children = Object[]
     if obj.memory_arity != 0
