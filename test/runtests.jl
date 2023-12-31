@@ -119,4 +119,11 @@ import CpuId
             @test first(collectobjects(:NUMANode)).mem > 0
         end
     end
+
+    @testset "AbstractTrees interface" begin
+        using AbstractTrees
+        t = gettopology()
+        # check that `children(gettopology)` returns the root of the HwlocTree
+        @test children(t).type == :Machine
+    end
 end
