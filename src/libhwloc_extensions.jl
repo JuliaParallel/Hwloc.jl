@@ -1,6 +1,6 @@
 module LibHwlocExtensions
 
-using ..LibHwloc: libhwloc, Hwloc_jll
+using ..LibHwloc: libhwloc
 
 using CEnum
 
