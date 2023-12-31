@@ -47,9 +47,17 @@ function is_visible(obj::Object; minimal=true)
 end
 
 """
-    print_topology([io::IO = stdout, obj::Object = gettopology()])
+    print_topology(
+        io::IO = stdout, obj::Object = gettopology();
+        indent = "", newline = false, prefix = "", minimal=true
+    )
 
-Prints the topology of the given `obj` as a tree to `io`.
+Prints the topology of the given `obj` as a tree to `io`. 
+
+**Note:** some systems have a great deal of extra PCI devices (think USB
+bridges, and the many many device classes on custom systems like HPC clusters).
+In order to mimmic the behaviour of the `lstopo` command, we ommit these devices
+unless `minimal=false`.
 """
 function print_topology(
         io::IO = stdout, obj::Object = gettopology();
