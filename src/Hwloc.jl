@@ -16,4 +16,9 @@ export hwloc_typeof, hwloc_isa, collectobjects
 
 const machine_topology = Ref{Object}()
 
+# Compatibility with older Julia versions + module extensions:
+if !isdefined(Base, :get_extension)
+    include(joinpath("..", "ext", "HwlocTrees.jl"))
+end
+
 end
