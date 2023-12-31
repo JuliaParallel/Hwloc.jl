@@ -49,7 +49,7 @@ end
 """
     print_topology(
         io::IO = stdout, obj::Object = gettopology();
-        indent = "", newline = false, prefix = "", minimal=true
+        indent = "", newline = true, prefix = "", minimal=true
     )
 
 Prints the topology of the given `obj` as a tree to `io`. 
@@ -61,7 +61,7 @@ unless `minimal=false`.
 """
 function print_topology(
         io::IO = stdout, obj::Object = gettopology();
-        indent = "", newline = false, prefix = "", minimal=true
+        indent = "", newline = true, prefix = "", minimal=true
     )
     t = hwloc_typeof(obj)
 
@@ -131,14 +131,23 @@ function print_topology(
     for child in obj.children
         no_newline = length(obj.children)==1 && t in (:L3Cache, :L2Cache, :L1Cache)
         if no_newline
-            print_topology(io, child; indent = indent, newline=false, prefix = " + ", )
+            print_topology(
+                io, child;
+                indent = indent, newline=newline, prefix = " + ", minimal=minimal
+            )
         else
-            print_topology(io, child; indent = indent*repeat(" ", 4), newline=true)
+            print_topology(
+                io, child;
+                indent = indent*repeat(" ", 4), newline=newline, minimal=minimal
+            )
         end
     end
 
     for child in obj.io_children
-        print_topology(io, child; indent=indent*repeat(" ", 4), newline=true)
+        print_topology(
+            io, child;
+            indent=indent*repeat(" ", 4), newline=newline, minimal=minimal
+        )
     end
 
     return nothing
