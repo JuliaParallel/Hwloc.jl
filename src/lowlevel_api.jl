@@ -319,6 +319,12 @@ function load(hobj::hwloc_obj_t)
 end
 
 
+"""
+    topology_init(;get_io=true)
+
+Init underlying Hwloc objec, and set the type filter to
+HWLOC_TYPE_FILTER_KEEP_ALL if `get_io==true`
+"""
 function topology_init(;get_io=true)
     r_htopo = Ref{hwloc_topology_t}()
     hwloc_topology_init(r_htopo)
