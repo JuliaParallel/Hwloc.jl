@@ -24,28 +24,45 @@ On my laptop this gives the following output:
 julia> using Hwloc
 
 julia> topology()
-Machine (16.0 GB)
-    Package L#0 P#0 (16.0 GB)
-        NUMANode (16.0 GB)
+
+Machine (31.05 GB)
+    Package L#0 P#0 (31.05 GB)
+        NUMANode (31.05 GB)
         L3 (12.0 MB)
-            L2 (256.0 kB) + L1 (32.0 kB) + Core L#0 P#0 
+            L2 (1.25 MB)
+             + L1 (48.0 kB)
+             + Core L#0 P#0 
                 PU L#0 P#0 
-                PU L#1 P#1 
-            L2 (256.0 kB) + L1 (32.0 kB) + Core L#1 P#1 
-                PU L#2 P#2 
-                PU L#3 P#3 
-            L2 (256.0 kB) + L1 (32.0 kB) + Core L#2 P#2 
-                PU L#4 P#4 
-                PU L#5 P#5 
-            L2 (256.0 kB) + L1 (32.0 kB) + Core L#3 P#3 
-                PU L#6 P#6 
+                PU L#1 P#4 
+            L2 (1.25 MB)
+             + L1 (48.0 kB)
+             + Core L#1 P#1 
+                PU L#2 P#1 
+                PU L#3 P#5 
+            L2 (1.25 MB)
+             + L1 (48.0 kB)
+             + Core L#2 P#2 
+                PU L#4 P#2 
+                PU L#5 P#6 
+            L2 (1.25 MB)
+             + L1 (48.0 kB)
+             + Core L#3 P#3 
+                PU L#6 P#3 
                 PU L#7 P#7 
-            L2 (256.0 kB) + L1 (32.0 kB) + Core L#4 P#4 
-                PU L#8 P#8 
-                PU L#9 P#9 
-            L2 (256.0 kB) + L1 (32.0 kB) + Core L#5 P#5 
-                PU L#10 P#10 
-                PU L#11 P#11
+    HostBridge 
+        PCI 00:02.0 (VGA)
+            GPU "renderD128"
+            GPU "card0"
+        PCIBridge 
+            PCI 01:00.0 (NVMExp)
+                Block(Disk) "nvme0n1"
+        PCIBridge 
+            PCI 72:00.0 (Network)
+                Net "wlp114s0"
+        PCIBridge 
+            PCI 73:00.0 (Other)
+                Block "mmcblk0"
+
 ```
 
 Often, one is only interested in a summary of this topology.
@@ -53,14 +70,14 @@ The function `topology_info()` provides such a compact description, which is loo
 
 ```julia
 julia> topology_info()
-Machine: 1 (16.0 GB)
- Package: 1 (16.0 GB)
-  NUMANode: 1 (16.0 GB)
+Machine: 1 (31.05 GB)
+ Package: 1 (31.05 GB)
+  NUMANode: 1 (31.05 GB)
    L3Cache: 1 (12.0 MB)
-    L2Cache: 6 (256.0 KB)
-     L1Cache: 6 (32.0 KB)
-      Core: 6
-       PU: 12
+    L2Cache: 4 (1.25 MB)
+     L1Cache: 4 (48.0 kB)
+      Core: 4
+       PU: 8
 ```
 
 If you prefer a more verbose graphical visualization you may consider using `topology_graphical()`:
@@ -95,14 +112,14 @@ One may also use `getinfo()` to programmatically access some of the output of `t
 
 ```julia
 julia> getinfo()
-Dict{Symbol,Int64} with 8 entries:
-  :L2Cache  => 6
+Dict{Symbol, Int64} with 8 entries:
+  :L2Cache  => 4
   :NUMANode => 1
-  :Core     => 6
+  :Core     => 4
   :Package  => 1
-  :L1Cache  => 6
+  :L1Cache  => 4
   :Machine  => 1
-  :PU       => 12
+  :PU       => 8
   :L3Cache  => 1
 ```
 
@@ -190,10 +207,84 @@ julia> collectobjects(:PU, l2cache)
  Hwloc.Object: PU
 ```
 
-### Manual topology query
+### Manual topology query and caching
 
 On the first call of `gettopology()`, Hwloc.jl examines the current machine's
 hardware topology and caches the result in `Hwloc.machine_topology`.
-To manually query the system topology one may use `Hwloc.topology_load`
-which directly `ccall`s into `libhwloc` and directly returns the
-resulting `Hwloc.Object`.
+
+To query the system the system topology again -- i.e. not using the cached
+`Hwloc.Object` representing the entire machine -- simply pass the `reload=true` (`false` by default) kwarg:
+
+```julia
+julia> topo = gettopology(;reload=true)
+Hwloc.Object: Machine
+```
+
+### Do not include I/O devices in topology object
+
+You may prefer not to include I/O devices in you Hwloc tree, then we recommend
+passing the `get_io=false` (`true` by default) kwarg, in addition to `reload`
+(cf. above):
+
+```julia
+julia> topo = gettopology(;reload=true, get_io=false)
+Hwloc.Object: Machine
+
+julia> topology(topo)
+Machine (31.05 GB)
+    Package L#0 P#0 (31.05 GB)
+        NUMANode (31.05 GB)
+        L3 (12.0 MB)
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#0 P#0 
+                PU L#0 P#0 
+                PU L#1 P#4 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#1 P#1 
+                PU L#2 P#1 
+                PU L#3 P#5 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#2 P#2 
+                PU L#4 P#2 
+                PU L#5 P#6 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#3 P#3 
+                PU L#6 P#3 
+                PU L#7 P#7 
+```
+(note: to avoid caching by eccident, we recommend passing `reload=true` to
+`gettopology`)
+
+### Low-level API for accessing the underlying topology object.
+
+**Warning:** As discussed earlier, `Hwloc.jl` makes heavy use of caching in the
+high-level API. Using the low-level and high-level APIs together can result in
+cached values being used by accident! We therefore recommend that the high-level
+`gettopology` funcion is used, where caching is controlled via the `reload`
+kwarg.
+
+Under the hood, `gettopology` uses `Hwloc.topology_init` and
+`Hwloc.topology_load` to directly `ccall` into `libhwloc`. `Hwloc.topology_init`
+is reponsible for creating a low-level `LibHwloc.hwloc_topology` object.
+`Hwloc.topology_load` wraps this a `Hwloc.Object` Julia object.
+
+**Note:** `Hwloc.topology_load` is destructive to the `LibHwloc.hwloc_topology`
+object:
+
+```julia
+julia> htopo = Hwloc.topology_init()
+Ptr{Hwloc.LibHwloc.hwloc_topology} @0x000000000883cf60
+
+julia> topo = Hwloc.topology_load(htopo)
+Hwloc.Object: Machine
+
+julia> topo = Hwloc.topology_load(htopo)
+ERROR: AssertionError: ierr == 0
+Stacktrace:
+ [1] topology_load(htopo::Ptr{Hwloc.LibHwloc.hwloc_topology})
+   @ Hwloc ~/.julia/dev/Hwloc/src/lowlevel_api.jl:347
+ [2] top-level scope
+   @ REPL[78]:1
+```
+
+This is because `LibHwloc.hwloc_topology` are not garbage-collected (a call to
+`Hwloc.topology_init`, without a later call to `Hwloc.hwloc_topology_destroy`
+will leak memory). This is why `Hwloc.topology_load` calls
+`Hwloc.hwloc_topology_destroy` after creating the `Hwloc.Object` Julia object
+(which is garbage collected!).
