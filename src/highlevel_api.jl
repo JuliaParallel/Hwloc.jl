@@ -47,13 +47,21 @@ function is_visible(obj::Object; minimal=true)
 end
 
 """
-    print_topology([io::IO = stdout, obj::Object = gettopology()])
+    print_topology(
+        io::IO = stdout, obj::Object = gettopology();
+        indent = "", newline = true, prefix = "", minimal=true
+    )
 
-Prints the topology of the given `obj` as a tree to `io`.
+Prints the topology of the given `obj` as a tree to `io`. 
+
+**Note:** some systems have a great deal of extra PCI devices (think USB
+bridges, and the many many device classes on custom systems like HPC clusters).
+In order to mimmic the behaviour of the `lstopo` command, we ommit these devices
+unless `minimal=false`.
 """
 function print_topology(
         io::IO = stdout, obj::Object = gettopology();
-        indent = "", newline = false, prefix = "", minimal=true
+        indent = "", newline = true, prefix = "", minimal=true
     )
     t = hwloc_typeof(obj)
 
@@ -123,14 +131,23 @@ function print_topology(
     for child in obj.children
         no_newline = length(obj.children)==1 && t in (:L3Cache, :L2Cache, :L1Cache)
         if no_newline
-            print_topology(io, child; indent = indent, newline=false, prefix = " + ", )
+            print_topology(
+                io, child;
+                indent = indent, newline=newline, prefix = " + ", minimal=minimal
+            )
         else
-            print_topology(io, child; indent = indent*repeat(" ", 4), newline=true)
+            print_topology(
+                io, child;
+                indent = indent*repeat(" ", 4), newline=newline, minimal=minimal
+            )
         end
     end
 
     for child in obj.io_children
-        print_topology(io, child; indent=indent*repeat(" ", 4), newline=true)
+        print_topology(
+            io, child;
+            indent=indent*repeat(" ", 4), newline=newline, minimal=minimal
+        )
     end
 
     return nothing
@@ -143,10 +160,10 @@ Returns the top-level system topology `Object`.
 On first call, it loads the topology by querying libhwloc and caches the result.
 Pass `reload=true` in order to force reload.
 """
-function gettopology(htopo=nothing; reload=false)
+function gettopology(htopo=nothing; reload=false, get_io=true)
     if reload || (!isassigned(machine_topology))
         if isnothing(htopo)
-            htopo=topology_init()
+            htopo=topology_init(;get_io=get_io)
         end
         machine_topology[] = topology_load(htopo)
     end
@@ -391,7 +408,11 @@ The quality of the result might depend on the used terminal and might vary betwe
 
 **Note:** The specific visualization may change between minor versions.
 """
-function topology_graphical()
-    run(`$(lstopo_no_graphics()) --no-legend --of txt`)
+function topology_graphical(;get_io=true)
+    if get_io
+        run(`$(lstopo_no_graphics()) --no-legend --of txt`)
+    else
+        run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
+    end
     return nothing
 end
