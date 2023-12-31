@@ -143,10 +143,10 @@ Returns the top-level system topology `Object`.
 On first call, it loads the topology by querying libhwloc and caches the result.
 Pass `reload=true` in order to force reload.
 """
-function gettopology(htopo=nothing; reload=false)
+function gettopology(htopo=nothing; reload=false, get_io=true)
     if reload || (!isassigned(machine_topology))
         if isnothing(htopo)
-            htopo=topology_init()
+            htopo=topology_init(;get_io=get_io)
         end
         machine_topology[] = topology_load(htopo)
     end
@@ -391,7 +391,11 @@ The quality of the result might depend on the used terminal and might vary betwe
 
 **Note:** The specific visualization may change between minor versions.
 """
-function topology_graphical()
-    run(`$(lstopo_no_graphics()) --no-legend --of txt`)
+function topology_graphical(;get_io=true)
+    if get_io
+        run(`$(lstopo_no_graphics()) --no-legend --of txt`)
+    else
+        run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
+    end
     return nothing
 end
