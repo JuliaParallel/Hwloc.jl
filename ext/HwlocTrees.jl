@@ -1,7 +1,10 @@
+module HwlocTrees
+
+using Hwloc, Printf
 import AbstractTrees
 
 mutable struct HwlocTreeNode{T}
-    object::Object
+    object::Hwloc.Object
     type::Symbol
     tag::Union{Nothing, T}
 
@@ -10,7 +13,7 @@ mutable struct HwlocTreeNode{T}
     memory_children::Vector{HwlocTreeNode{T}}
     io_children::Vector{HwlocTreeNode{T}}
 
-    function HwlocTreeNode{T}(obj::Object; parent=nothing, type=nothing) where {T}
+    function HwlocTreeNode{T}(obj::Hwloc.Object; parent=nothing, type=nothing) where {T}
         this = new{T}(obj, obj.type_, nothing, parent)
 
         this.children = HwlocTreeNode{T}.(obj.children; parent=this)
@@ -19,6 +22,10 @@ mutable struct HwlocTreeNode{T}
 
         return this
     end
+end
+
+function AbstractTrees.children(node::Hwloc.Object)
+    HwlocTreeNode{UInt8}(node)
 end
 
 function AbstractTrees.children(node::HwlocTreeNode)
@@ -80,4 +87,5 @@ function tag_subtree!(tree_node, val)
     for n in collect(AbstractTrees.PreOrderDFS(tree_node))
         n.tag = val
     end
+end
 end
