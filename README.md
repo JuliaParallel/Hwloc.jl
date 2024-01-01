@@ -123,7 +123,6 @@ Dict{Symbol, Int64} with 8 entries:
   :L3Cache  => 1
 ```
 
-
 ### Cache properties
 
 Assuming that multiple caches of the same level (e.g. L1) have identical properties, one can use the convenience functions `cachesize()` and `cachelinesize()` to obtain the relevant sizes in Bytes:
@@ -288,3 +287,70 @@ This is because `LibHwloc.hwloc_topology` are not garbage-collected (a call to
 will leak memory). This is why `Hwloc.topology_load` calls
 `Hwloc.hwloc_topology_destroy` after creating the `Hwloc.Object` Julia object
 (which is garbage collected!).
+
+
+## Hwloc objects are `AbstractTrees`
+
+If the [`AbstractTrees`](https://github.com/JuliaCollections/AbstractTrees.jl)
+module is loaded, then passing an `Hwloc.Object` to `AbstractTrees.children`
+will construct an `HwlocTreeNode`. Calling `children(gettopology())` will
+return the Hwloc tree root:
+
+```julia
+julia> using AbstractTrees, Hwloc
+
+julia> t = children(gettopology());
+
+julia> print_tree(t; maxdepth=2)
+Hwloc.Object: Machine
+├─ Hwloc.Object: Package [L#0 P#0]
+│  ├─ Hwloc.Object: L3Cache
+│  │  ⋮
+│  │  
+│  └─ Hwloc.Object: NUMANode
+└─ Hwloc.Object: Bridge [HostBridge]
+   ├─ Hwloc.Object: PCI_Device [00:00.0 (HostBridge)]
+   ├─ Hwloc.Object: PCI_Device [00:02.0 (VGA)]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: PCI_Device [00:04.0 (SignalProcessing)]
+   ├─ Hwloc.Object: Bridge [PCIBridge]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: Bridge [PCIBridge]
+   ├─ Hwloc.Object: Bridge [PCIBridge]
+   ├─ Hwloc.Object: PCI_Device [00:0a.0 (SignalProcessing)]
+   ├─ Hwloc.Object: PCI_Device [00:0d.0 (USB)]
+   ├─ Hwloc.Object: PCI_Device [00:0d.2 (USB)]
+   ├─ Hwloc.Object: PCI_Device [00:0d.3 (USB)]
+   ├─ Hwloc.Object: PCI_Device [00:12.0 (Serial)]
+   ├─ Hwloc.Object: PCI_Device [00:14.0 (USB)]
+   ├─ Hwloc.Object: PCI_Device [00:14.2 (RAM)]
+   ├─ Hwloc.Object: PCI_Device [00:15.0 (SerialBus)]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: PCI_Device [00:15.1 (SerialBus)]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: PCI_Device [00:16.0 (Communication)]
+   ├─ Hwloc.Object: PCI_Device [00:19.0 (SerialBus)]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: PCI_Device [00:19.1 (SerialBus)]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: Bridge [PCIBridge]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: Bridge [PCIBridge]
+   │  ⋮
+   │  
+   ├─ Hwloc.Object: PCI_Device [00:1f.0 (ISABridge)]
+   ├─ Hwloc.Object: PCI_Device [00:1f.3 (MultimediaAudio)]
+   ├─ Hwloc.Object: PCI_Device [00:1f.4 (SMBus)]
+   └─ Hwloc.Object: PCI_Device [00:1f.5 (SerialBus)]
+
+```
+
+For examples of using the AbstracTree interface to search the Hwloc tree, see:
+[NetworkInterfaceControllers.jl](https://github.com/JuliaParallel/NetworkInterfaceControllers.jl)
