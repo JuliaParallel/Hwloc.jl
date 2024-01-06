@@ -78,6 +78,9 @@ Machine: 1 (31.05 GB)
      L1Cache: 4 (48.0 kB)
       Core: 4
        PU: 8
+        Bridge: 6
+         PCI_Device: 22
+          OS_Device: 13
 ```
 
 If you prefer a more verbose graphical visualization you may consider using `topology_graphical()`:
@@ -112,15 +115,18 @@ One may also use `getinfo()` to programmatically access some of the output of `t
 
 ```julia
 julia> getinfo()
-Dict{Symbol, Int64} with 8 entries:
-  :L2Cache  => 4
-  :NUMANode => 1
-  :Core     => 4
-  :Package  => 1
-  :L1Cache  => 4
-  :Machine  => 1
-  :PU       => 8
-  :L3Cache  => 1
+Dict{Symbol, Int64} with 11 entries:
+  :Package    => 1
+  :PU         => 8
+  :OS_Device  => 13
+  :Core       => 4
+  :L3Cache    => 1
+  :Machine    => 1
+  :PCI_Device => 22
+  :L2Cache    => 4
+  :NUMANode   => 1
+  :Bridge     => 6
+  :L1Cache    => 4
 ```
 
 

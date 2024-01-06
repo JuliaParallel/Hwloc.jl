@@ -177,11 +177,13 @@ Prints the system topology as a tree.
 topology(topo=gettopology()) = print_topology(topo)
 
 """
+    topology_info(topo=gettopology())
+
 Prints a summary of the system topology (loosely similar to `hwloc-info`).
 """
-function topology_info()
+function topology_info(topo=gettopology())
     nodes = Tuple{Symbol, Int64, String}[]
-    for subobj in gettopology()
+    for subobj in topo
         idx = findfirst(t->t[1] == subobj.type_, nodes)
         if isnothing(idx)
             attrstr = ""
