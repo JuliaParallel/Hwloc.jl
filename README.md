@@ -223,11 +223,11 @@ Hwloc.Object: Machine
 ### Do not include I/O devices in topology object
 
 You may prefer not to include I/O devices in you Hwloc tree, then we recommend
-passing the `get_io=false` (`true` by default) kwarg, in addition to `reload`
-(cf. above):
+passing the `io=false` (`true` by default) kwarg, in addition to `reload` (cf.
+above):
 
 ```julia
-julia> topo = gettopology(;reload=true, get_io=false)
+julia> topo = gettopology(;reload=true, io=false)
 Hwloc.Object: Machine
 
 julia> topology(topo)
