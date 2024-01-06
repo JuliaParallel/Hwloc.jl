@@ -133,12 +133,12 @@ function print_topology(
         if no_newline
             print_topology(
                 io, child;
-                indent = indent, newline=newline, prefix = " + ", minimal=minimal
+                indent = indent, newline=false, prefix = " + ", minimal=minimal
             )
         else
             print_topology(
                 io, child;
-                indent = indent*repeat(" ", 4), newline=newline, minimal=minimal
+                indent = indent*repeat(" ", 4), newline=true, minimal=minimal
             )
         end
     end
@@ -146,7 +146,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(
             io, child;
-            indent=indent*repeat(" ", 4), newline=newline, minimal=minimal
+            indent=indent*repeat(" ", 4), newline=true, minimal=minimal
         )
     end
 
