@@ -288,7 +288,7 @@ Machine (31.05 GB)
                 PU L#6 P#3 
                 PU L#7 P#7 
 ```
-(note: to avoid caching by eccident, we recommend passing `reload=true` to
+(note: to avoid caching by accident, we recommend passing `reload=true` to
 `gettopology`)
 
 ### Low-level API for accessing the underlying topology object.
