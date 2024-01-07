@@ -29,24 +29,16 @@ Machine (31.05 GB)
     Package L#0 P#0 (31.05 GB)
         NUMANode (31.05 GB)
         L3 (12.0 MB)
-            L2 (1.25 MB)
-             + L1 (48.0 kB)
-             + Core L#0 P#0 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#0 P#0 
                 PU L#0 P#0 
                 PU L#1 P#4 
-            L2 (1.25 MB)
-             + L1 (48.0 kB)
-             + Core L#1 P#1 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#1 P#1 
                 PU L#2 P#1 
                 PU L#3 P#5 
-            L2 (1.25 MB)
-             + L1 (48.0 kB)
-             + Core L#2 P#2 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#2 P#2 
                 PU L#4 P#2 
                 PU L#5 P#6 
-            L2 (1.25 MB)
-             + L1 (48.0 kB)
-             + Core L#3 P#3 
+            L2 (1.25 MB) + L1 (48.0 kB) + Core L#3 P#3 
                 PU L#6 P#3 
                 PU L#7 P#7 
     HostBridge 
