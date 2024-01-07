@@ -23,7 +23,7 @@ import CpuId
     @testset "Topology (compact info)" begin
         println("Info:")
         topology_info()
-        counts = getinfo(list_all=true)
+        counts = getinfo(;list_all=true)
         @test typeof(counts) == Dict{Symbol,Int}
         @test length(counts) == length(Hwloc.obj_types)
         println(counts)
@@ -34,7 +34,7 @@ import CpuId
         @test num_virtual_cores() == counts[:PU]
         @test num_packages() == counts[:Package]
         @test num_numa_nodes() == counts[:NUMANode]
-        counts = getinfo(list_all=false)
+        counts = getinfo()
         @test typeof(counts) == Dict{Symbol,Int}
         @test all(>(0), values(counts))
     end

@@ -133,12 +133,12 @@ function print_topology(
         if no_newline
             print_topology(
                 io, child;
-                indent = indent, newline=newline, prefix = " + ", minimal=minimal
+                indent = indent, newline=false, prefix = " + ", minimal=minimal
             )
         else
             print_topology(
                 io, child;
-                indent = indent*repeat(" ", 4), newline=newline, minimal=minimal
+                indent = indent*repeat(" ", 4), newline=true, minimal=minimal
             )
         end
     end
@@ -146,7 +146,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(
             io, child;
-            indent=indent*repeat(" ", 4), newline=newline, minimal=minimal
+            indent=indent*repeat(" ", 4), newline=true, minimal=minimal
         )
     end
 
@@ -160,10 +160,10 @@ Returns the top-level system topology `Object`.
 On first call, it loads the topology by querying libhwloc and caches the result.
 Pass `reload=true` in order to force reload.
 """
-function gettopology(htopo=nothing; reload=false, get_io=true)
+function gettopology(htopo=nothing; reload=false, io=true)
     if reload || (!isassigned(machine_topology))
         if isnothing(htopo)
-            htopo=topology_init(;get_io=get_io)
+            htopo=topology_init(;io=io)
         end
         machine_topology[] = topology_load(htopo)
     end
@@ -174,14 +174,16 @@ end
 """
 Prints the system topology as a tree.
 """
-topology(htopo=nothing) = print_topology(gettopology(htopo))
+topology(topo=gettopology()) = print_topology(topo)
 
 """
+    topology_info(topo=gettopology())
+
 Prints a summary of the system topology (loosely similar to `hwloc-info`).
 """
-function topology_info()
+function topology_info(topo=gettopology())
     nodes = Tuple{Symbol, Int64, String}[]
-    for subobj in gettopology()
+    for subobj in topo
         idx = findfirst(t->t[1] == subobj.type_, nodes)
         if isnothing(idx)
             attrstr = ""
@@ -200,21 +202,25 @@ function topology_info()
 end
 
 """
+    getinfo(topo=gettopology(); list_all=false)
+
 Programmatic version of `topology_info()`. Returns a `Dict{Symbol,Int}`
 whose entries indicate which and how often certain hwloc elements are present.
 
-If the keyword argument `list_all` (default: `false`) is set to `true`,
-the resulting dictionary will contain all possible hwloc elements.
+If the `list_all` kwarg is `true`, then the results Dict will have a key for
+each Hwloc type. **Warning:** a zero count does not necessarily mean that such
+a device is not present -- e.g. the following
+```
+getinfo(gettopology(;reload=true, io=false); list_all=true) 
+```
+will show a `PCI_Device` count of zero, even though those devices are present
+(the zero count is due to the `io=false` kwarg passed to `gettopology`).
 """
-function getinfo(; list_all::Bool = false)
+function getinfo(topo=gettopology(); list_all=false)
     res = list_all ? Dict{Symbol,Int}(t => 0 for t in obj_types) : Dict{Symbol, Int}()
-    for subobj in gettopology()
+    for subobj in topo
         t = hwloc_typeof(subobj)
-        if t in keys(res)
-            res[t] += 1
-        else
-            res[t] = 1
-        end
+        res[t] = get!(res, t, 0) + 1
     end
     return res
 end
@@ -408,8 +414,8 @@ The quality of the result might depend on the used terminal and might vary betwe
 
 **Note:** The specific visualization may change between minor versions.
 """
-function topology_graphical(;get_io=true)
-    if get_io
+function topology_graphical(;io=true)
+    if io
         run(`$(lstopo_no_graphics()) --no-legend --of txt`)
     else
         run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
