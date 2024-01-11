@@ -1,5 +1,8 @@
-using ..LibHwloc: hwloc_get_api_version
+using ..LibHwloc: hwloc_get_api_version, HWLOC_OBJ_BRIDGE_HOST,
+    HWLOC_OBJ_OSDEV_BLOCK, HWLOC_OBJ_OSDEV_GPU, HWLOC_OBJ_OSDEV_NETWORK,
+    HWLOC_OBJ_OSDEV_OPENFABRICS, HWLOC_OBJ_OSDEV_DMA, HWLOC_OBJ_OSDEV_COPROC
 
+using Printf
 
 """
 Returns the API version of libhwloc.
@@ -14,27 +17,110 @@ function get_api_version()
     VersionNumber(major, minor, patch)
 end
 
-"""
-    print_topology([io::IO = stdout, obj::Object = gettopology()])
+const minimal_classes = [
+    "VGA", "NVMExp", "SATA", "Network", "Ethernet", "InfiniBand", "3D", "Other"
+]
+subtype_str(obj) = obj.subtype == "" ? "" : "($(obj.subtype))"
 
-Prints the topology of the given `obj` as a tree to `io`.
-"""
-function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "", newline = false, prefix = "")
+function is_visible(obj::Object; minimal=true)
     t = hwloc_typeof(obj)
+
+    if t == :Bridge
+        for child in obj.io_children
+            if is_visible(child)
+                return true
+            end
+        end
+        return false
+    end
+
+    if t == :PCI_Device
+        if minimal
+            class_string = hwloc_pci_class_string(obj.attr.class_id)
+            return class_string in minimal_classes
+        else
+            return true
+        end
+    end
+
+    return true
+end
+
+"""
+    print_topology(
+        io::IO = stdout, obj::Object = gettopology();
+        indent = "", newline = true, prefix = "", minimal=true
+    )
+
+Prints the topology of the given `obj` as a tree to `io`. 
+
+**Note:** some systems have a great deal of extra PCI devices (think USB
+bridges, and the many many device classes on custom systems like HPC clusters).
+In order to mimmic the behaviour of the `lstopo` command, we ommit these devices
+unless `minimal=false`.
+"""
+function print_topology(
+        io::IO = stdout, obj::Object = gettopology();
+        indent = "", newline = true, prefix = "", minimal=true
+    )
+    t = hwloc_typeof(obj)
+
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
     attrstr = string(obj.attr)
+
+    # this is set to false whenever minimal == true and the PCI class_id strings
+    # don't match the minimal_classes list
+    print_device = is_visible(obj; minimal=minimal)
 
     if t in (:L1Cache, :L2Cache, :L3Cache, :L1ICache)
         tstr = first(string(t), 2)
         attrstr = "("*_bytes2string(obj.attr.size)*")"
+    elseif t == :Bridge
+        if obj.attr.upstream_type == HWLOC_OBJ_BRIDGE_HOST
+            tstr    = "HostBridge"
+            attrstr = ""
+        else
+            tstr = "PCIBridge"
+            attrstr = ""
+        end
+    elseif t == :PCI_Device
+        class_string = hwloc_pci_class_string(obj.attr.class_id)
+        tstr    = "PCI"
+        attrstr = @sprintf(
+            "%s%02x:%02x.%01x",
+            Char(obj.attr.domain), obj.attr.bus, obj.attr.dev, obj.attr.func
+        ) * " ($(class_string))"
+    elseif t == :OS_Device
+        attrstr = "\"$(obj.name)\""
+        tstr = if obj.attr.type == HWLOC_OBJ_OSDEV_BLOCK
+            "Block$(subtype_str(obj))"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_GPU
+            "GPU"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_NETWORK
+            "Net"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_OPENFABRICS
+            "OpenFabrics"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_DMA
+            "DMA"
+        elseif obj.attr.type == HWLOC_OBJ_OSDEV_COPROC
+            "CoProc$(subtype_str(obj))"
+        else
+            string(obj.attr)
+        end
     else
         tstr = string(t)
+        attrstr = obj.name
     end
 
-    newline && print(io, "\n", indent)
-    print(io, prefix, tstr, " ",
-        idxstr,
-        attrstr, obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : "")
+    if print_device
+        newline && print(io, "\n", indent)
+        print(
+            io, prefix, tstr, " ", idxstr, attrstr,
+            obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : ""
+        )
+    else
+        return nothing
+    end
 
     for memchild in obj.memory_children
         memstr = "("*_bytes2string(memchild.mem)*")"
@@ -45,11 +131,25 @@ function print_topology(io::IO = stdout, obj::Object = gettopology(); indent = "
     for child in obj.children
         no_newline = length(obj.children)==1 && t in (:L3Cache, :L2Cache, :L1Cache)
         if no_newline
-            print_topology(io, child; indent = indent, newline=false, prefix = " + ", )
+            print_topology(
+                io, child;
+                indent = indent, newline=false, prefix = " + ", minimal=minimal
+            )
         else
-            print_topology(io, child; indent = indent*repeat(" ", 4), newline=true)
+            print_topology(
+                io, child;
+                indent = indent*repeat(" ", 4), newline=true, minimal=minimal
+            )
         end
     end
+
+    for child in obj.io_children
+        print_topology(
+            io, child;
+            indent=indent*repeat(" ", 4), newline=true, minimal=minimal
+        )
+    end
+
     return nothing
 end
 print_topology(obj::Object) = print_topology(stdout, obj)
@@ -57,12 +157,15 @@ print_topology(obj::Object) = print_topology(stdout, obj)
 """
 Returns the top-level system topology `Object`.
 
-On first call, it loads the topology by querying
-libhwloc and caches the result.
+On first call, it loads the topology by querying libhwloc and caches the result.
+Pass `reload=true` in order to force reload.
 """
-function gettopology()
-    if !isassigned(machine_topology)
-        machine_topology[] = topology_load()
+function gettopology(htopo=nothing; reload=false, io=true)
+    if reload || (!isassigned(machine_topology))
+        if isnothing(htopo)
+            htopo=topology_init(;io=io)
+        end
+        machine_topology[] = topology_load(htopo)
     end
 
     return machine_topology[]
@@ -71,14 +174,16 @@ end
 """
 Prints the system topology as a tree.
 """
-topology() = print_topology(gettopology())
+topology(topo=gettopology()) = print_topology(topo)
 
 """
+    topology_info(topo=gettopology())
+
 Prints a summary of the system topology (loosely similar to `hwloc-info`).
 """
-function topology_info()
+function topology_info(topo=gettopology())
     nodes = Tuple{Symbol, Int64, String}[]
-    for subobj in gettopology()
+    for subobj in topo
         idx = findfirst(t->t[1] == subobj.type_, nodes)
         if isnothing(idx)
             attrstr = ""
@@ -97,21 +202,25 @@ function topology_info()
 end
 
 """
+    getinfo(topo=gettopology(); list_all=false)
+
 Programmatic version of `topology_info()`. Returns a `Dict{Symbol,Int}`
 whose entries indicate which and how often certain hwloc elements are present.
 
-If the keyword argument `list_all` (default: `false`) is set to `true`,
-the resulting dictionary will contain all possible hwloc elements.
+If the `list_all` kwarg is `true`, then the results Dict will have a key for
+each Hwloc type. **Warning:** a zero count does not necessarily mean that such
+a device is not present -- e.g. the following
+```
+getinfo(gettopology(;reload=true, io=false); list_all=true) 
+```
+will show a `PCI_Device` count of zero, even though those devices are present
+(the zero count is due to the `io=false` kwarg passed to `gettopology`).
 """
-function getinfo(; list_all::Bool = false)
+function getinfo(topo=gettopology(); list_all=false)
     res = list_all ? Dict{Symbol,Int}(t => 0 for t in obj_types) : Dict{Symbol, Int}()
-    for subobj in gettopology()
+    for subobj in topo
         t = hwloc_typeof(subobj)
-        if t in keys(res)
-            res[t] += 1
-        else
-            res[t] = 1
-        end
+        res[t] = get!(res, t, 0) + 1
     end
     return res
 end
@@ -305,7 +414,11 @@ The quality of the result might depend on the used terminal and might vary betwe
 
 **Note:** The specific visualization may change between minor versions.
 """
-function topology_graphical()
-    run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
+function topology_graphical(;io=true)
+    if io
+        run(`$(lstopo_no_graphics()) --no-legend --of txt`)
+    else
+        run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
+    end
     return nothing
 end

@@ -2,10 +2,18 @@ using ..LibHwloc:
     hwloc_cpuset_t, hwloc_nodeset_t, hwloc_obj_type_t, hwloc_obj_cache_type_t,
     hwloc_obj_bridge_type_t, hwloc_obj_osdev_type_t, hwloc_distances_s,
     hwloc_obj, hwloc_obj_t, hwloc_obj_attr_u, hwloc_cache_attr_s,
-    hwloc_group_attr_s, hwloc_pcidev_attr_s, hwloc_osdev_attr_s,
-    hwloc_topology_t, hwloc_topology_init, hwloc_topology_load,
-    hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
-    hwloc_get_obj_by_depth, hwloc_topology_destroy
+    hwloc_group_attr_s, hwloc_bridge_attr_s, hwloc_pcidev_attr_s,
+    hwloc_osdev_attr_s, hwloc_topology_t, hwloc_topology_init,
+    hwloc_topology_load, hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
+    hwloc_get_obj_by_depth, hwloc_topology_destroy, hwloc_type_filter_e,
+    hwloc_topology_set_type_filter, hwloc_topology_get_type_filter,
+    hwloc_topology_set_all_types_filter, hwloc_topology_set_cache_types_filter,
+    hwloc_topology_set_icache_types_filter, hwloc_topology_set_io_types_filter,
+    hwloc_topology_set_userdata, hwloc_topology_get_userdata, var"##Ctag#349",
+    var"##Ctag#350"
+
+using ..LibHwlocExtensions:
+    hwloc_pci_class_string
 
 # List of special capitalizations -- cenum_name_to_symbol will by default
 # convert the all-uppcase C enum name to lowercase (with capitalized leading
@@ -38,15 +46,14 @@ for x in instances(hwloc_obj_cache_type_t)
     push!(cache_types, cenum_name_to_symbol(x, "HWLOC_OBJ_CACHE_"))
 end
 
-# const bridge_types
 bridge_types = Symbol[]
 for x in instances(hwloc_obj_bridge_type_t)
-    push!(cache_types, cenum_name_to_symbol(x, "HWLOC_OBJ_BRIDGE_"))
+    push!(bridge_types, cenum_name_to_symbol(x, "HWLOC_OBJ_BRIDGE_"))
 end
 
 osdev_types = Symbol[]
 for x in instances(hwloc_obj_osdev_type_t)
-    push!(cache_types, cenum_name_to_symbol(x, "HWLOC_OBJ_OSDEV_"))
+    push!(osdev_types, cenum_name_to_symbol(x, "HWLOC_OBJ_OSDEV_"))
 end
 
 abstract type Attribute end
@@ -63,8 +70,14 @@ struct CacheAttr <: Attribute
     type_::Symbol
 end
 function show(io::IO, a::CacheAttr)
-    print(io, "Cache{size=$(a.size),depth=$(a.depth),linesize=$(a.linesize),",
-          "associativity=$(a.associativity),type=$(string(a.type_))}")
+    print(
+        io,
+        "Cache{size=$(a.size), "             *
+        "depth=$(a.depth), "                 *
+        "linesize=$(a.linesize), "           *
+        "associativity=$(a.associativity), " *
+        "type=$(string(a.type_))}"
+    )
 end
 
 struct GroupAttr <: Attribute
@@ -87,16 +100,59 @@ struct PCIDevAttr <: Attribute
     revision::Int
     linkspeed::Float32
 end
-# TODO: expand this
-show(io::IO, a::PCIDevAttr) = print(io, "PCIDev{...}")
+function PCIDevAttr(ha::hwloc_pcidev_attr_s)
+    return PCIDevAttr(
+        ha.domain, ha.bus, ha.dev, ha.func, ha.class_id, ha.vendor_id,
+        ha.device_id, ha.subvendor_id, ha.subdevice_id, ha.revision,
+        ha.linkspeed
+    )
+end
+function show(io::IO, a::PCIDevAttr)
+    print(
+        io,
+        "PCIDev(domain=$(a.domain), "                      *
+        "bus=$(a.bus), "                                   *
+        "dev=$(a.dev), "                                   *
+        "func=$(a.func), "                                 *
+        "class_id=$(hwloc_pci_class_string(a.class_id)), " *
+        "vendor_id=$(a.vendor_id), "                       *
+        "device_id=$(a.device_id), "                       *
+        "subvendor_id=$(a.subvendor_id), "                 *
+        "subdevice_id=$(a.subdevice_id), "                 *
+        "revision=$(a.revision), "                         *
+        "linkspeed=$(a.linkspeed))"
+    )
+end
 
-# type BridgeAttr <: Attribute end
+struct BridgeAttr <: Attribute
+    upstream::var"##Ctag#349"
+    upstream_type::hwloc_obj_bridge_type_t
+    downstream::var"##Ctag#350"
+    downstream_type::hwloc_obj_bridge_type_t
+    depth::UInt
+end
+function BridgeAttr(ha::hwloc_bridge_attr_s)
+    return BridgeAttr(
+        ha.upstream, ha.upstream_type,
+        ha.downstream, ha.downstream_type,
+        ha.depth
+    )
+end
+function show(io::IO, a::BridgeAttr)
+    print(
+        io,
+        "BridgeAttr(US=$(hwloc_pci_class_string(a.upstream.pci.class_id)), " *
+        "upstream_type=$(string(a.upstream_type)), "                         *
+        "downstream_type=$(string(a.downstream_type)) "                      *
+        ")"
+    )
+end
 
 struct OSDevAttr <: Attribute
-    type_::Symbol
+    type::hwloc_obj_osdev_type_t
 end
 function show(io::IO, a::OSDevAttr)
-    print(io, "OSDev{type=$(string(a.type_))}")
+    print(io, "OSDev{type=$(string(a.type))}")
 end
 
 struct DieAttr <: Attribute
@@ -134,11 +190,14 @@ function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
     elseif type_==:Misc
         error("not implemented")
     elseif type_==:Bridge
-        error("not implemented")
+        ha = unsafe_load(convert(Ptr{hwloc_bridge_attr_s}, hattr))
+        return BridgeAttr(ha)
     elseif type_==:PCI_Device
-        error("not implemented")
+        ha = unsafe_load(convert(Ptr{hwloc_pcidev_attr_s}, hattr))
+        return PCIDevAttr(ha)
     elseif type_==:OS_Device
-        error("not implemented")
+        ha = unsafe_load(convert(Ptr{hwloc_obj_osdev_type_t}, hattr))
+        return OSDevAttr(ha)
     elseif type_==:Die
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return DieAttr(ha.depth)
@@ -150,10 +209,9 @@ function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
 end
 
 
-
-
 struct Object
     type_::Symbol
+    subtype::String
     os_index::Int
     name::String
     attr::Attribute
@@ -167,6 +225,8 @@ struct Object
 
     memory_children::Vector{Object}
 
+    io_children::Vector{Object}
+
     # Object() = new(:Error, -1, "(nothing)", NullAttr(),
     #                0, -1, -1, # -1,
     #                Object[], Object[])
@@ -178,7 +238,10 @@ IteratorSize(::Type{Object}) = Base.SizeUnknown()
 IteratorEltype(::Type{Object}) = Base.HasEltype()
 eltype(::Type{Object}) = Object
 isempty(::Object) = false
-iterate(obj::Object) = (obj, isempty(obj.memory_children) ? obj.children : vcat(obj.memory_children, obj.children))
+function iterate(obj::Object)
+    state = vcat(obj.children, obj.memory_children, obj.io_children)
+    return obj, state
+end
 function iterate(::Object, state::Vector{Object})
     isempty(state) && return nothing
     # depth-first traversal
@@ -186,6 +249,7 @@ function iterate(::Object, state::Vector{Object})
     obj, state = state[1], state[2:end]
     prepend!(state, obj.children)
     prepend!(state, obj.memory_children)
+    prepend!(state, obj.io_children)
     return obj, state
 end
 # length(obj::Object) = mapreduce(x->1, +, obj)
@@ -201,6 +265,7 @@ function load(hobj::hwloc_obj_t)
 
     @assert Integer(obj.type)>=0 && Integer(obj.type)<length(obj_types)
     type_ = obj_types[obj.type+1]
+    subtype = obj.subtype == C_NULL ? "" : unsafe_string(obj.subtype)
 
     os_index = mod(obj.os_index, Cint)
 
@@ -216,19 +281,69 @@ function load(hobj::hwloc_obj_t)
 
     # topo.os_level = obj.os_level
 
-    obj_children = Vector{hwloc_obj_t}(UndefInitializer(), obj.arity)
-    obj_children_r = Base.unsafe_convert(Ptr{hwloc_obj_t}, obj_children)
-    unsafe_copyto!(obj_children_r, obj.children, obj.arity)
-
-    children = Object[load(child) for child in obj_children]
+    children = Object[
+        load(child)
+        for child in unsafe_wrap(Vector{hwloc_obj_t}, obj.children, obj.arity)
+    ]
 
     memory_children = Object[]
-    if obj.memory_arity != C_NULL && obj.memory_first_child != C_NULL
-        push!(memory_children, load(obj.memory_first_child))
+    if obj.memory_arity != 0
+        memory_child = obj.memory_first_child 
+        while memory_child != C_NULL
+            push!(memory_children, load(memory_child))
+            memory_child = unsafe_load(memory_child).next_sibling
+        end
     end
 
-    topo = Object(type_, os_index, name, attr, mem, depth, logical_index, children, memory_children)
+    io_children = Object[]
+    if obj.io_arity != 0 
+        io_child = obj.io_first_child
+        while io_child != C_NULL
+            push!(io_children, load(io_child))
+            io_child = unsafe_load(io_child).next_sibling
+        end
+    end
+
+    misc_children = Object[]
+    if obj.misc_arity != 0
+        misc_child = obj.misc_first_child
+        while misc_child != C_NULL
+            push!(misc_children, load(misc_child))
+            misc_child = unsafe_load(misc_child).next_sibling
+        end
+    end
+
+    topo = Object(
+        type_, subtype, os_index, name, attr, mem, depth, logical_index,
+        children, memory_children, io_children
+    )
     return topo
+end
+
+
+"""
+    topology_init(;io=true)
+
+Init underlying Hwloc objec, and set the type filter to
+HWLOC_TYPE_FILTER_KEEP_ALL if `io==true`
+"""
+function topology_init(;io=true)
+    r_htopo = Ref{hwloc_topology_t}()
+    hwloc_topology_init(r_htopo)
+    if io
+        hwloc_topology_set_io_types_filter(
+            r_htopo[], LibHwloc.HWLOC_TYPE_FILTER_KEEP_ALL
+        )
+    end
+    return r_htopo[]
+end
+
+
+function get_type_filter(topology, object_type)
+    r_type_filter = Ref{hwloc_type_filter_e}()
+    ierr = hwloc_topology_get_type_filter(topology, object_type, r_type_filter)
+    @assert ierr == 0
+    return r_type_filter[]
 end
 
 
@@ -237,13 +352,9 @@ end
 
 Load the system topology by calling into libhwloc.
 """
-function topology_load()
-    htopop = Ref{hwloc_topology_t}()
-    ierr = hwloc_topology_init(htopop)
-    @assert ierr==0
-    htopo = htopop[]
+function topology_load(htopo=topology_init())
     ierr = hwloc_topology_load(htopo)
-    @assert ierr==0
+    @assert ierr == 0
 
     depth = hwloc_topology_get_depth(htopo)
     @assert depth >= 1
