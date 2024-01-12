@@ -70,7 +70,7 @@ function AbstractTrees.printnode(io::IO, node::HwlocTreeNode)
         elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_DMA
             "DMA"
         elseif obj.attr.type == Hwloc.LibHwloc.HWLOC_OBJ_OSDEV_COPROC
-            "CoProc$(subtype_str(obj))"
+            "CoProc$(Hwloc.subtype_str(obj))"
         else
             string(obj.attr)
         end * " \"$(obj.name)\"]"
