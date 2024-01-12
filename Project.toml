@@ -16,10 +16,10 @@ AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 
 [compat]
-CEnum = "≥ 0.4"
+CEnum = "0.4, 0.5"
 Hwloc_jll = "2.8"
-AbstractTrees = "≥ 0.4.4"
-julia = "≥ 1.6"
+AbstractTrees = "0.4.4"
+julia = "1.6, 1.7, 1.8, 1.9, 1.10"
 
 [extras]
 CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
