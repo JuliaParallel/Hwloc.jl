@@ -29,7 +29,7 @@ function AbstractTrees.children(node::Hwloc.Object)
 end
 
 function AbstractTrees.children(node::HwlocTreeNode)
-    tuple(node.children..., node.memory_children..., node.io_children...)
+    tuple(node.memory_children..., node.children..., node.io_children...)
 end
 
 AbstractTrees.nodevalue(n::HwlocTreeNode) = n.object

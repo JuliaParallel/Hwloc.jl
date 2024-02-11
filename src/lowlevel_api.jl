@@ -239,7 +239,7 @@ IteratorEltype(::Type{Object}) = Base.HasEltype()
 eltype(::Type{Object}) = Object
 isempty(::Object) = false
 function iterate(obj::Object)
-    state = vcat(obj.children, obj.memory_children, obj.io_children)
+    state = vcat(obj.memory_children, obj.children, obj.io_children)
     return obj, state
 end
 function iterate(::Object, state::Vector{Object})
@@ -247,9 +247,9 @@ function iterate(::Object, state::Vector{Object})
     # depth-first traversal
     # obj = shift!(state)
     obj, state = state[1], state[2:end]
+    prepend!(state, obj.io_children)
     prepend!(state, obj.children)
     prepend!(state, obj.memory_children)
-    prepend!(state, obj.io_children)
     return obj, state
 end
 # length(obj::Object) = mapreduce(x->1, +, obj)
