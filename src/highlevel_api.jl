@@ -86,9 +86,9 @@ function print_topology(
     elseif t == :PCI_Device
         class_string = hwloc_pci_class_string(obj.attr.class_id)
         tstr    = "PCI"
-        attrstr = @sprintf(
-            "%s%02x:%02x.%01x",
-            Char(obj.attr.domain), obj.attr.bus, obj.attr.dev, obj.attr.func
+        attrstr = obj.attr.domain == 0 ? "" : @sprintf("%04x:", obj.attr.domain)
+        attrstr *= @sprintf("%02x:%02x.%01x",
+            obj.attr.bus, obj.attr.dev, obj.attr.func
         ) * " ($(class_string))"
     elseif t == :OS_Device
         attrstr = "\"$(obj.name)\""
