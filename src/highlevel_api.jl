@@ -430,7 +430,9 @@ in the topology.
 num_cpukinds() = length(get_cpukind_info())
 
 """
-Get the number of CPU cores in the topology  that are of the same kind.
+For each kind of CPU cores, get the number of cores in the topology that are of that kind.
+Typically, sorting is by efficiency (descending order). Hence, efficiency cores come before
+performance cores.
 """
 function num_cores_cpukinds()
     cki = get_cpukind_info()
