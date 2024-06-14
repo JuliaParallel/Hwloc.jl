@@ -12,7 +12,8 @@ using ..LibHwloc:
     hwloc_topology_set_userdata, hwloc_topology_get_userdata, var"##Ctag#349",
     var"##Ctag#350", hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full,
     hwloc_bitmap_free, hwloc_cpukinds_get_by_cpuset, hwloc_bitmap_from_ulong,
-    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_to_ulong
+    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_to_ulong, hwloc_bitmap_nr_ulongs,
+    hwloc_topology_get_topology_cpuset, hwloc_bitmap_to_ulongs
 
 using ..LibHwlocExtensions:
     hwloc_pci_class_string
@@ -382,18 +383,13 @@ function ith_in_mask(mask::Culong, i::Integer)
     return !iszero(mask & imask)
 end
 
-function count_set_bits(i::Culong)
-    i = i - ((i >> 1) & 0x55555555)                 # add pairs of bits
-    i = (i & 0x33333333) + ((i >> 2) & 0x33333333)  # quads
-    i = (i + (i >> 4)) & 0x0F0F0F0F                 # groups of 8
-    i *= 0x01010101                                 # horizontal sum of bytes
-    return Int64(i >> 24)                           # return just that top byte (after truncating to 32-bit even when int is wider than uint32_t)
-end
+count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 1:64)
 
 """
 Get information of cores of the same cpukind. `kind_index` starts at 1.
 """
 function get_info_same_cpukind(htopo, kind_index)
+    cpuset = hwloc_topology_get_topology_cpuset(htopo)
     withbitmap() do bm
         infos = Ref{Ptr{hwloc_info_s}}()
         efficiency = Ref{Cint}()
@@ -402,6 +398,12 @@ function get_info_same_cpukind(htopo, kind_index)
         if ret != 0
             return nothing
         end
+
+        nrcpuset =  hwloc_bitmap_nr_ulongs(cpuset) # number of ulongs needed to represent all possible bitmaps
+        nrbitmap =  hwloc_bitmap_nr_ulongs(bm) # number of ulongs needed to represent all possible bitmaps
+        @show nrcpuset, nrbitmap
+        # hwloc_bitmap_to_ulongs(bm)
+
         # The lower the efficiency rank the more efficient the core.
         # For example, we expect efficiency_rank=0 for efficiency cores and
         # efficiency_rank=1 for performance cores (if there's two kinds of cores).
