@@ -12,7 +12,7 @@ using ..LibHwloc:
     hwloc_topology_set_userdata, hwloc_topology_get_userdata, var"##Ctag#349",
     var"##Ctag#350", hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full,
     hwloc_bitmap_free, hwloc_cpukinds_get_by_cpuset, hwloc_bitmap_from_ulong,
-    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_to_ulong, hwloc_bitmap_nr_ulongs,
+    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_nr_ulongs,
     hwloc_topology_get_topology_cpuset, hwloc_bitmap_to_ulongs
 
 using ..LibHwlocExtensions:

@@ -430,11 +430,11 @@ in the topology.
 num_cpukinds() = length(get_cpukind_info())
 
 """
-For each kind of CPU cores, get the number of cores in the topology that are of that kind.
+For each kind of CPU cores, get the number of (virtual) cores in the topology that are of that kind.
 Typically, sorting is by efficiency (descending order). Hence, efficiency cores come before
 performance cores.
 """
-function num_cores_cpukinds()
+function num_virtual_cores_cpukinds()
     cki = get_cpukind_info()
     if nothing in cki
         return nothing
