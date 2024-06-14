@@ -52,7 +52,7 @@ end
         indent = "", newline = true, prefix = "", minimal=true
     )
 
-Prints the topology of the given `obj` as a tree to `io`. 
+Prints the topology of the given `obj` as a tree to `io`.
 
 **Note:** some systems have a great deal of extra PCI devices (think USB
 bridges, and the many many device classes on custom systems like HPC clusters).
@@ -60,9 +60,9 @@ In order to mimmic the behaviour of the `lstopo` command, we ommit these devices
 unless `minimal=false`.
 """
 function print_topology(
-        io::IO = stdout, obj::Object = gettopology();
-        indent = "", newline = true, prefix = "", minimal=true
-    )
+    io::IO=stdout, obj::Object=gettopology();
+    indent="", newline=true, prefix="", minimal=true
+)
     t = hwloc_typeof(obj)
 
     idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
@@ -74,10 +74,10 @@ function print_topology(
 
     if t in (:L1Cache, :L2Cache, :L3Cache, :L1ICache)
         tstr = first(string(t), 2)
-        attrstr = "("*_bytes2string(obj.attr.size)*")"
+        attrstr = "(" * _bytes2string(obj.attr.size) * ")"
     elseif t == :Bridge
         if obj.attr.upstream_type == HWLOC_OBJ_BRIDGE_HOST
-            tstr    = "HostBridge"
+            tstr = "HostBridge"
             attrstr = ""
         else
             tstr = "PCIBridge"
@@ -85,7 +85,7 @@ function print_topology(
         end
     elseif t == :PCI_Device
         class_string = hwloc_pci_class_string(obj.attr.class_id)
-        tstr    = "PCI"
+        tstr = "PCI"
         attrstr = obj.attr.domain == 0 ? "" : @sprintf("%04x:", obj.attr.domain)
         attrstr *= @sprintf("%02x:%02x.%01x",
             obj.attr.bus, obj.attr.dev, obj.attr.func
@@ -116,29 +116,29 @@ function print_topology(
         newline && print(io, "\n", indent)
         print(
             io, prefix, tstr, " ", idxstr, attrstr,
-            obj.mem > 0 ? "("*_bytes2string(obj.mem)*")" : ""
+            obj.mem > 0 ? "(" * _bytes2string(obj.mem) * ")" : ""
         )
     else
         return nothing
     end
 
     for memchild in obj.memory_children
-        memstr = "("*_bytes2string(memchild.mem)*")"
+        memstr = "(" * _bytes2string(memchild.mem) * ")"
         println(io)
-        print(io, indent*repeat(" ", 4), string(memchild.type_), " ", memstr)
+        print(io, indent * repeat(" ", 4), string(memchild.type_), " ", memstr)
     end
 
     for child in obj.children
-        no_newline = length(obj.children)==1 && t in (:L3Cache, :L2Cache, :L1Cache)
+        no_newline = length(obj.children) == 1 && t in (:L3Cache, :L2Cache, :L1Cache)
         if no_newline
             print_topology(
                 io, child;
-                indent = indent, newline=false, prefix = " + ", minimal=minimal
+                indent=indent, newline=false, prefix=" + ", minimal=minimal
             )
         else
             print_topology(
                 io, child;
-                indent = indent*repeat(" ", 4), newline=true, minimal=minimal
+                indent=indent * repeat(" ", 4), newline=true, minimal=minimal
             )
         end
     end
@@ -146,7 +146,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(
             io, child;
-            indent=indent*repeat(" ", 4), newline=true, minimal=minimal
+            indent=indent * repeat(" ", 4), newline=true, minimal=minimal
         )
     end
 
@@ -163,7 +163,7 @@ Pass `reload=true` in order to force reload.
 function gettopology(htopo=nothing; reload=false, io=true)
     if reload || (!isassigned(machine_topology))
         if isnothing(htopo)
-            htopo=topology_init(;io=io)
+            htopo = topology_init(; io=io)
         end
         machine_topology[] = topology_load(htopo)
     end
@@ -182,21 +182,21 @@ topology(topo=gettopology()) = print_topology(topo)
 Prints a summary of the system topology (loosely similar to `hwloc-info`).
 """
 function topology_info(topo=gettopology())
-    nodes = Tuple{Symbol, Int64, String}[]
+    nodes = Tuple{Symbol,Int64,String}[]
     for subobj in topo
-        idx = findfirst(t->t[1] == subobj.type_, nodes)
+        idx = findfirst(t -> t[1] == subobj.type_, nodes)
         if isnothing(idx)
             attrstr = ""
             subobj.mem > 0 && (attrstr = " ($(_bytes2string(subobj.mem)))")
             subobj.type_ ∈ (:L1Cache, :L2Cache, :L3Cache) && (attrstr = " ($(_bytes2string(subobj.attr.size)))")
             push!(nodes, (subobj.type_, 1, attrstr))
         else
-            nodes[idx] = (subobj.type_, nodes[idx][2]+1, nodes[idx][3])
+            nodes[idx] = (subobj.type_, nodes[idx][2] + 1, nodes[idx][3])
         end
     end
 
-    for (i,n) in enumerate(nodes)
-        println(repeat(" ", i-1), "$(n[1]): ", n[2], n[3])
+    for (i, n) in enumerate(nodes)
+        println(repeat(" ", i - 1), "$(n[1]): ", n[2], n[3])
     end
     return nothing
 end
@@ -211,13 +211,13 @@ If the `list_all` kwarg is `true`, then the results Dict will have a key for
 each Hwloc type. **Warning:** a zero count does not necessarily mean that such
 a device is not present -- e.g. the following
 ```
-getinfo(gettopology(;reload=true, io=false); list_all=true) 
+getinfo(gettopology(;reload=true, io=false); list_all=true)
 ```
 will show a `PCI_Device` count of zero, even though those devices are present
 (the zero count is due to the `io=false` kwarg passed to `gettopology`).
 """
 function getinfo(topo=gettopology(); list_all=false)
-    res = list_all ? Dict{Symbol,Int}(t => 0 for t in obj_types) : Dict{Symbol, Int}()
+    res = list_all ? Dict{Symbol,Int}(t => 0 for t in obj_types) : Dict{Symbol,Int}()
     for subobj in topo
         t = hwloc_typeof(subobj)
         res[t] = get!(res, t, 0) + 1
@@ -251,7 +251,7 @@ hwloc_isa(type::Symbol) = obj -> hwloc_typeof(obj) == type
 
 Collects objects of the given hwloc `type` from the (sub-)topology tree `t`.
 """
-collectobjects(type::Symbol, t::Object = gettopology()) = collect(Iterators.filter(hwloc_isa(type), t))
+collectobjects(type::Symbol, t::Object=gettopology()) = collect(Iterators.filter(hwloc_isa(type), t))
 
 """
 The number of physical cores.
@@ -276,29 +276,29 @@ num_numa_nodes() = count(hwloc_isa(:NUMANode), gettopology())
 """
 Returns a vector containing the sizes of all available L3 caches in Bytes.
 """
-l3cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L3Cache, gettopology()))
+l3cache_sizes() = map(obj -> obj.attr.size, Iterators.filter(obj -> obj.type_ == :L3Cache, gettopology()))
 """
 Returns a vector containing the L3 cache line sizes in Bytes.
 """
-l3cache_linesizes() = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L3Cache, gettopology()))
+l3cache_linesizes() = map(obj -> obj.attr.linesize, Iterators.filter(obj -> obj.type_ == :L3Cache, gettopology()))
 
 """
 Returns a vector containing the sizes of all available L2 caches in Bytes.
 """
-l2cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L2Cache, gettopology()))
+l2cache_sizes() = map(obj -> obj.attr.size, Iterators.filter(obj -> obj.type_ == :L2Cache, gettopology()))
 """
 Returns a vector containing the L2 cache line sizes in Bytes.
 """
-l2cache_linesizes() = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L2Cache, gettopology()))
+l2cache_linesizes() = map(obj -> obj.attr.linesize, Iterators.filter(obj -> obj.type_ == :L2Cache, gettopology()))
 
 """
 Returns a vector containing the sizes of all available L1 caches in Bytes.
 """
-l1cache_sizes() = map(obj->obj.attr.size, Iterators.filter(obj->obj.type_ == :L1Cache, gettopology()))
+l1cache_sizes() = map(obj -> obj.attr.size, Iterators.filter(obj -> obj.type_ == :L1Cache, gettopology()))
 """
 Returns a vector containing the L1 cache line sizes in Bytes.
 """
-l1cache_linesizes() = map(obj->obj.attr.linesize, Iterators.filter(obj->obj.type_ == :L1Cache, gettopology()))
+l1cache_linesizes() = map(obj -> obj.attr.linesize, Iterators.filter(obj -> obj.type_ == :L1Cache, gettopology()))
 
 """
     cachesize()
@@ -414,11 +414,25 @@ The quality of the result might depend on the used terminal and might vary betwe
 
 **Note:** The specific visualization may change between minor versions.
 """
-function topology_graphical(;io=true)
+function topology_graphical(; io=true)
     if io
         run(`$(lstopo_no_graphics()) --no-legend --of txt`)
     else
         run(`$(lstopo_no_graphics()) --no-io --no-legend --of txt`)
     end
     return nothing
+end
+
+"""
+Get the number of different kinds of CPU cores (e.g. efficiency and performance cores)
+in the topology.
+"""
+num_cpukinds() = length(get_cpukind_info())
+
+"""
+Get the number of CPU cores in the topology  that are of the same kind.
+"""
+function num_cores_cpukinds()
+    cki = get_cpukind_info()
+    return [count_set_bits(cki[i].mask) for i in eachindex(cki)]
 end
