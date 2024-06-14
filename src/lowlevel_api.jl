@@ -384,12 +384,13 @@ function ith_in_mask(mask::Culong, i::Integer)
 end
 
 count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 1:64)
+count_set_bits(masks::Vector{Culong}) = sum(count_set_bits.(masks))
 
 """
 Get information of cores of the same cpukind. `kind_index` starts at 1.
 """
 function get_info_same_cpukind(htopo, kind_index)
-    cpuset = hwloc_topology_get_topology_cpuset(htopo)
+    # cpuset = hwloc_topology_get_topology_cpuset(htopo)
     withbitmap() do bm
         infos = Ref{Ptr{hwloc_info_s}}()
         efficiency = Ref{Cint}()
@@ -399,19 +400,19 @@ function get_info_same_cpukind(htopo, kind_index)
             return nothing
         end
 
-        nrcpuset =  hwloc_bitmap_nr_ulongs(cpuset) # number of ulongs needed to represent all possible bitmaps
-        nrbitmap =  hwloc_bitmap_nr_ulongs(bm) # number of ulongs needed to represent all possible bitmaps
-        @show nrcpuset, nrbitmap
-        # hwloc_bitmap_to_ulongs(bm)
+        # nrcpuset =  hwloc_bitmap_nr_ulongs(cpuset) # number of ulongs needed to represent all possible bitmaps
+        nr = hwloc_bitmap_nr_ulongs(bm) # number of ulongs needed to represent bitmap
+        masks = [Culong(0) for _ in 1:nr]
+        hwloc_bitmap_to_ulongs(bm, nr, masks)
 
         # The lower the efficiency rank the more efficient the core.
         # For example, we expect efficiency_rank=0 for efficiency cores and
         # efficiency_rank=1 for performance cores (if there's two kinds of cores).
-        return (; mask=hwloc_bitmap_to_ulong(bm), efficiency_rank=efficiency[])
+        return (; masks=masks, efficiency_rank=efficiency[])
     end
 end
 
-const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,@NamedTuple{mask::UInt64, efficiency_rank::Int32}}}}}(nothing)
+const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,@NamedTuple{masks::Vector{UInt64}, efficiency_rank::Int32}}}}}(nothing)
 
 function get_cpukind_info()
     isnothing(_cpukindinfo[]) && topology_load()

@@ -439,5 +439,5 @@ function num_cores_cpukinds()
     if nothing in cki
         return nothing
     end
-    return [count_set_bits(cki[i].mask) for i in eachindex(cki)]
+    return [count_set_bits(cki[i].masks) for i in eachindex(cki)]
 end
