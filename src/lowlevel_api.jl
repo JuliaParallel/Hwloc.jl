@@ -364,19 +364,6 @@ function withbitmap(f; full=false)
     end
 end
 
-"""
-Return the \"cpu kind\" of the `i`th core (`0 < i <= hwloc_cpukinds_get_nr(htopo, 0)`)
-"""
-function cpukind_of_ith_core(htopo, i)
-    mask = Culong(0) | (1 << (i - 1))
-    local cpukind
-    withbitmap() do bm
-        hwloc_bitmap_from_ulong(bm, mask)
-        cpukind = hwloc_cpukinds_get_by_cpuset(htopo, bm, 0)
-    end
-    return cpukind
-end
-
 function ith_in_mask(mask::Culong, i::Integer)
     # i starts at 1
     imask = Culong(0) | (1 << (i - 1))
@@ -438,8 +425,6 @@ function topology_load(htopo=topology_init())
     ncpukinds = hwloc_cpukinds_get_nr(htopo, 0)
     if ncpukinds > 0
         # more than one CPU kind detected
-        # @show cpukind_of_ith_core(htopo, 1)
-        # @show cpukind_of_ith_core(htopo, 6)
         _cpukindinfo[] = [get_info_cpukind(htopo, kind_index) for kind_index in 1:ncpukinds]
     else
         _cpukindinfo[] = [nothing]
