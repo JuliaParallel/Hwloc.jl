@@ -436,5 +436,5 @@ performance cores.
 """
 function num_cores_cpukinds()
     cki = get_cpukind_info()
-    return [count_set_bits(cki[i].mask) for i in eachindex(cki)]
+    return [isnothing(cki[i]) ? nothing : count_set_bits(cki[i].mask) for i in eachindex(cki)]
 end
