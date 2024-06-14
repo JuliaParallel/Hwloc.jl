@@ -66,7 +66,11 @@ function print_topology(
     t = hwloc_typeof(obj)
 
     idxstr = if t in (:Package, :Core, :PU)
-        "L#$(obj.logical_index) P#$(obj.os_index) "
+        s = "L#$(obj.logical_index) P#$(obj.os_index) "
+        if t == :PU && cpukinds
+            s = s * "(Kind=$(os_index2cpukind(obj.os_index)))"
+        end
+        s
     else
         ""
     end
@@ -137,12 +141,12 @@ function print_topology(
         if no_newline
             print_topology(
                 io, child;
-                indent=indent, newline=false, prefix=" + ", minimal=minimal
+                indent=indent, newline=false, prefix=" + ", minimal=minimal, cpukinds
             )
         else
             print_topology(
                 io, child;
-                indent=indent * repeat(" ", 4), newline=true, minimal=minimal
+                indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukinds
             )
         end
     end
@@ -150,7 +154,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(
             io, child;
-            indent=indent * repeat(" ", 4), newline=true, minimal=minimal
+            indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukinds
         )
     end
 
@@ -439,9 +443,23 @@ Typically, sorting is by efficiency (descending order). Hence, efficiency cores 
 performance cores.
 """
 function num_virtual_cores_cpukinds()
-    cki = get_cpukind_info()
-    if nothing in cki
+    cks = get_cpukind_info()
+    if nothing in cks
         return nothing
     end
-    return [count_set_bits(cki[i].masks) for i in eachindex(cki)]
+    return [count_set_bits(cks[i].masks) for i in eachindex(cks)]
+end
+
+function os_index2cpukind(i)
+    cks = get_cpukind_info()
+    for (kind, x) in enumerate(cks)
+        if length(x.masks) > 1
+            error("Unforunately, this feature is not yet available on systems with > 64 virtual cores.")
+        end
+        m = only(x.masks)
+        if ith_in_mask(m, i)
+            return kind
+        end
+    end
+    return -1
 end
