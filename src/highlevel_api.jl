@@ -61,14 +61,20 @@ unless `minimal=false`.
 """
 function print_topology(
     io::IO=stdout, obj::Object=gettopology();
-    indent="", newline=true, prefix="", minimal=true, cpukinds=false
+    indent="", newline=true, prefix="", minimal=true, cpukind=false, cpukindinfo=false
 )
     t = hwloc_typeof(obj)
 
     idxstr = if t in (:Package, :Core, :PU)
         s = "L#$(obj.logical_index) P#$(obj.os_index) "
-        if t == :PU && cpukinds
-            s = s * "($(os_index2cpukind(obj.os_index)))"
+        if t == :PU && cpukind
+            ck = _osindex2cpukind(obj.os_index)
+            if cpukindinfo
+                infostr = _stringify_cpukind_infos(get_cpukind_info()[ck].infos)
+                s = s * "($ck, $infostr)"
+            else
+                s = s * "($ck)"
+            end
         end
         s
     else
@@ -141,12 +147,12 @@ function print_topology(
         if no_newline
             print_topology(
                 io, child;
-                indent=indent, newline=false, prefix=" + ", minimal=minimal, cpukinds
+                indent=indent, newline=false, prefix=" + ", minimal=minimal, cpukind, cpukindinfo
             )
         else
             print_topology(
                 io, child;
-                indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukinds
+                indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukind, cpukindinfo
             )
         end
     end
@@ -154,7 +160,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(
             io, child;
-            indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukinds
+            indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukind, cpukindinfo
         )
     end
 
@@ -450,7 +456,7 @@ function num_virtual_cores_cpukinds()
     return [count_set_bits(cks[i].masks) for i in eachindex(cks)]
 end
 
-function os_index2cpukind(i)
+function _osindex2cpukind(i)
     cks = get_cpukind_info()
     for (kind, x) in enumerate(cks)
         if length(x.masks) > 1
@@ -462,4 +468,13 @@ function os_index2cpukind(i)
         end
     end
     return -1
+end
+
+function _stringify_cpukind_infos(infos::Vector{HwlocInfo})
+    x = first(infos)
+    str = x.name * "=" * x.value
+    if length(infos) > 1
+        str *= "; ..."
+    end
+    return str
 end
