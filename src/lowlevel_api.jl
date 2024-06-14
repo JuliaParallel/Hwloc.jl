@@ -389,7 +389,7 @@ count_set_bits(masks::Vector{Culong}) = sum(count_set_bits.(masks))
 """
 Get information of cores of the same cpukind. `kind_index` starts at 1.
 """
-function get_info_same_cpukind(htopo, kind_index)
+function get_info_cpukind(htopo, kind_index)
     # cpuset = hwloc_topology_get_topology_cpuset(htopo)
     withbitmap() do bm
         infos = Ref{Ptr{hwloc_info_s}}()
@@ -440,7 +440,7 @@ function topology_load(htopo=topology_init())
         # more than one CPU kind detected
         # @show cpukind_of_ith_core(htopo, 1)
         # @show cpukind_of_ith_core(htopo, 6)
-        _cpukindinfo[] = [get_info_same_cpukind(htopo, kind_index) for kind_index in 1:ncpukinds]
+        _cpukindinfo[] = [get_info_cpukind(htopo, kind_index) for kind_index in 1:ncpukinds]
     else
         _cpukindinfo[] = [nothing]
     end
