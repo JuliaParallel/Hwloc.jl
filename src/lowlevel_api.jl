@@ -433,7 +433,7 @@ function topology_load(htopo=topology_init())
     topo = load(root)
 
     ncpukinds = hwloc_cpukinds_get_nr(htopo, 0)
-    if ncpukinds > 1
+    if ncpukinds > 0
         # more than one CPU kind detected
         # @show cpukind_of_ith_core(htopo, 1)
         # @show cpukind_of_ith_core(htopo, 6)
