@@ -61,11 +61,15 @@ unless `minimal=false`.
 """
 function print_topology(
     io::IO=stdout, obj::Object=gettopology();
-    indent="", newline=true, prefix="", minimal=true
+    indent="", newline=true, prefix="", minimal=true, cpukinds=false
 )
     t = hwloc_typeof(obj)
 
-    idxstr = t in (:Package, :Core, :PU) ? "L#$(obj.logical_index) P#$(obj.os_index) " : ""
+    idxstr = if t in (:Package, :Core, :PU)
+        "L#$(obj.logical_index) P#$(obj.os_index) "
+    else
+        ""
+    end
     attrstr = string(obj.attr)
 
     # this is set to false whenever minimal == true and the PCI class_id strings
@@ -152,7 +156,7 @@ function print_topology(
 
     return nothing
 end
-print_topology(obj::Object) = print_topology(stdout, obj)
+print_topology(obj::Object; kwargs...) = print_topology(stdout, obj; kwargs...)
 
 """
 Returns the top-level system topology `Object`.
@@ -174,7 +178,7 @@ end
 """
 Prints the system topology as a tree.
 """
-topology(topo=gettopology()) = print_topology(topo)
+topology(topo=gettopology(); kwargs...) = print_topology(topo; kwargs...)
 
 """
     topology_info(topo=gettopology())

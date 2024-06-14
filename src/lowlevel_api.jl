@@ -13,7 +13,7 @@ using ..LibHwloc:
     var"##Ctag#350", hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full,
     hwloc_bitmap_free, hwloc_cpukinds_get_by_cpuset, hwloc_bitmap_from_ulong,
     hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_nr_ulongs,
-    hwloc_topology_get_topology_cpuset, hwloc_bitmap_to_ulongs
+    hwloc_bitmap_to_ulongs
 
 using ..LibHwlocExtensions:
     hwloc_pci_class_string
@@ -373,11 +373,15 @@ end
 count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 1:64)
 count_set_bits(masks::Vector{Culong}) = sum(count_set_bits.(masks))
 
+struct HwlocInfo
+    name::String
+    value::String
+end
+
 """
 Get information of cores of the same cpukind. `kind_index` starts at 1.
 """
 function get_info_cpukind(htopo, kind_index)
-    # cpuset = hwloc_topology_get_topology_cpuset(htopo)
     withbitmap() do bm
         infos = Ref{Ptr{hwloc_info_s}}()
         efficiency = Ref{Cint}()
@@ -386,20 +390,25 @@ function get_info_cpukind(htopo, kind_index)
         if ret != 0
             return nothing
         end
-
-        # nrcpuset =  hwloc_bitmap_nr_ulongs(cpuset) # number of ulongs needed to represent all possible bitmaps
+        # extract infos
+        infovec = unsafe_wrap(Array, infos[], (nr_infos[],))
+        infovecjl = Vector{HwlocInfo}(undef, nr_infos[])
+        for (i, x) in pairs(infovec)
+            infovecjl[i] = HwlocInfo(unsafe_string(x.name), unsafe_string(x.value))
+        end
+        # extract masks
         nr = hwloc_bitmap_nr_ulongs(bm) # number of ulongs needed to represent bitmap
         masks = [Culong(0) for _ in 1:nr]
         hwloc_bitmap_to_ulongs(bm, nr, masks)
-
         # The lower the efficiency rank the more efficient the core.
         # For example, we expect efficiency_rank=0 for efficiency cores and
         # efficiency_rank=1 for performance cores (if there's two kinds of cores).
-        return (; masks=masks, efficiency_rank=efficiency[])
+        return (; masks=masks, efficiency_rank=efficiency[], infos=infovecjl)
     end
 end
 
-const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,@NamedTuple{masks::Vector{UInt64}, efficiency_rank::Int32}}}}}(nothing)
+const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,
+    @NamedTuple{masks::Vector{UInt64}, efficiency_rank::Int32, infos::Vector{HwlocInfo}}}}}}(nothing)
 
 function get_cpukind_info()
     isnothing(_cpukindinfo[]) && topology_load()
