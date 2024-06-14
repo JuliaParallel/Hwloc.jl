@@ -68,7 +68,7 @@ function print_topology(
     idxstr = if t in (:Package, :Core, :PU)
         s = "L#$(obj.logical_index) P#$(obj.os_index) "
         if t == :PU && cpukinds
-            s = s * "(Kind=$(os_index2cpukind(obj.os_index)))"
+            s = s * "($(os_index2cpukind(obj.os_index)))"
         end
         s
     else
