@@ -408,7 +408,7 @@ function get_info_cpukind(htopo, kind_index)
 end
 
 const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,
-    @NamedTuple{masks::Vector{UInt64}, efficiency_rank::Int32, infos::Vector{HwlocInfo}}}}}}(nothing)
+    @NamedTuple{masks::Vector{Culong}, efficiency_rank::Int32, infos::Vector{HwlocInfo}}}}}}(nothing)
 
 function get_cpukind_info()
     isnothing(_cpukindinfo[]) && topology_load()
