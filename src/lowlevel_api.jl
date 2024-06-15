@@ -370,7 +370,7 @@ function ith_in_mask(mask::Culong, i::Integer)
     return !iszero(mask & imask)
 end
 
-count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 0:63)
+count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 0:(sizeof(Culong) * 8 - 1))
 count_set_bits(masks::Vector{Culong}) = sum(count_set_bits.(masks))
 
 struct HwlocInfo
