@@ -49,7 +49,7 @@ end
 """
     print_topology(
         io::IO = stdout, obj::Object = gettopology();
-        indent = "", newline = true, prefix = "", minimal=true
+        indent = "", newline = true, prefix = "", minimal=true, cpukind=false
     )
 
 Prints the topology of the given `obj` as a tree to `io`.
@@ -58,10 +58,16 @@ Prints the topology of the given `obj` as a tree to `io`.
 bridges, and the many many device classes on custom systems like HPC clusters).
 In order to mimmic the behaviour of the `lstopo` command, we ommit these devices
 unless `minimal=false`.
+
+**Note:** you can set `cpukind=true` to get information about the (potentially) different
+kinds of CPU cores (e.g. efficiency and performance cores). This should
+show a number, and, if available, extra information about the core behind PU elements
+in the topology. The number categorizes PUs by kind and a lower number indicates higher
+efficiency. Hence, efficiency cores may have kind 1 and performance cores kind 2.
 """
 function print_topology(
     io::IO=stdout, obj::Object=gettopology();
-    indent="", newline=true, prefix="", minimal=true, cpukind=false, cpukindinfo=false
+    indent="", newline=true, prefix="", minimal=true, cpukind=false
 )
     t = hwloc_typeof(obj)
 
@@ -69,12 +75,8 @@ function print_topology(
         s = "L#$(obj.logical_index) P#$(obj.os_index) "
         if t == :PU && cpukind
             ck = _osindex2cpukind(obj.os_index)
-            if cpukindinfo
-                infostr = _stringify_cpukind_infos(get_cpukind_info()[ck].infos)
-                s = s * "($ck, $infostr)"
-            else
-                s = s * "($ck)"
-            end
+            infostr = _stringify_cpukind_infos(get_cpukind_info()[ck].infos)
+            s = s * "($ck, $infostr)"
         end
         s
     else
@@ -147,12 +149,12 @@ function print_topology(
         if no_newline
             print_topology(
                 io, child;
-                indent=indent, newline=false, prefix=" + ", minimal=minimal, cpukind, cpukindinfo
+                indent=indent, newline=false, prefix=" + ", minimal=minimal, cpukind
             )
         else
             print_topology(
                 io, child;
-                indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukind, cpukindinfo
+                indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukind
             )
         end
     end
@@ -160,7 +162,7 @@ function print_topology(
     for child in obj.io_children
         print_topology(
             io, child;
-            indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukind, cpukindinfo
+            indent=indent * repeat(" ", 4), newline=true, minimal=minimal, cpukind
         )
     end
 
@@ -186,7 +188,8 @@ function gettopology(htopo=nothing; reload=false, io=true)
 end
 
 """
-Prints the system topology as a tree.
+Prints the system topology as a tree. See the docstring of `Hwloc.print_topology`
+for more information on supported keyword arguments.
 """
 topology(topo=gettopology(); kwargs...) = print_topology(topo; kwargs...)
 
