@@ -186,6 +186,51 @@ Hwloc.l2cache_sizes() = [262144, 262144, 262144, 262144, 262144, 262144]
 Hwloc.l3cache_sizes() = [12582912]
 ````
 
+### Different kind of CPU cores
+
+Some systems have CPU cores of differents kinds, like, e.g., efficiency and performance cores. With Hwloc.jl, you can query the number of different kinds and the count of CPU cores for each kind. For example, on Mac mini M1 (4 efficiency and 4 performance cores):
+
+```julia
+julia> using Hwloc
+
+julia> num_cpukinds()
+2
+
+julia> num_virtual_cores_cpukinds()
+2-element Vector{Int64}:
+ 4
+ 4
+```
+
+You can also see which PU belongs to which CPU kind by passing `cpukind=true` to `topology`:
+
+```julia
+julia> topology(; cpukind=true)
+
+Machine (3.49 GB)
+    Package L#0 P#0 (3.49 GB)
+        NUMANode (3.49 GB)
+        L2 (4.0 MB)
+            L1 (64.0 kB) + Core L#0 P#0
+                PU L#0 P#0 (1, DarwinCompatible=apple,icestorm;ARM,v8)
+            L1 (64.0 kB) + Core L#1 P#1
+                PU L#1 P#1 (1, DarwinCompatible=apple,icestorm;ARM,v8)
+            L1 (64.0 kB) + Core L#2 P#2
+                PU L#2 P#2 (1, DarwinCompatible=apple,icestorm;ARM,v8)
+            L1 (64.0 kB) + Core L#3 P#3
+                PU L#3 P#3 (1, DarwinCompatible=apple,icestorm;ARM,v8)
+        L2 (12.0 MB)
+            L1 (128.0 kB) + Core L#4 P#4
+                PU L#4 P#4 (2, DarwinCompatible=apple,firestorm;ARM,v8)
+            L1 (128.0 kB) + Core L#5 P#5
+                PU L#5 P#5 (2, DarwinCompatible=apple,firestorm;ARM,v8)
+            L1 (128.0 kB) + Core L#6 P#6
+                PU L#6 P#6 (2, DarwinCompatible=apple,firestorm;ARM,v8)
+            L1 (128.0 kB) + Core L#7 P#7
+                PU L#7 P#7 (2, DarwinCompatible=apple,firestorm;ARM,v8)
+    CoProc(OpenCL) "opencl0d0"
+```
+
 ### Manual access
 
 To manually traverse and investigate the system topology tree, one may use `gettopology()` to
