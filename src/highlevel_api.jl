@@ -75,7 +75,11 @@ function print_topology(
         s = "L#$(obj.logical_index) P#$(obj.os_index) "
         if t == :PU && cpukind
             ck = _osindex2cpukind(obj.os_index)
-            infostr = _stringify_cpukind_infos(get_cpukind_info()[ck].infos)
+            if ck != -1
+                infostr = _stringify_cpukind_infos(get_cpukind_info()[ck].infos)
+            else
+                infostr = "unknown"
+            end
             s = s * "($ck, $infostr)"
         end
         s
@@ -462,12 +466,11 @@ end
 function _osindex2cpukind(i)
     cks = get_cpukind_info()
     for (kind, x) in enumerate(cks)
-        if length(x.masks) > 1
-            error("Unforunately, this feature is not yet available on systems with > 64 virtual cores.")
-        end
-        m = only(x.masks)
-        if ith_in_mask(m, i)
-            return kind
+        for (k, mask) in enumerate(x.masks)
+            offset = (k - 1) * sizeof(Clong) * 8
+            if ith_in_mask(mask, i - offset)
+                return kind
+            end
         end
     end
     return -1
