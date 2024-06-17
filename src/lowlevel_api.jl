@@ -436,7 +436,8 @@ function topology_load(htopo=topology_init())
         # more than one CPU kind detected
         _cpukindinfo[] = [get_info_cpukind(htopo, kind_index) for kind_index in 1:ncpukinds]
     else
-        _cpukindinfo[] = [nothing]
+        # CPU kind information is unavailable
+        _cpukindinfo[] = []
     end
 
     hwloc_topology_destroy(htopo)

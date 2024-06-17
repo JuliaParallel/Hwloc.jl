@@ -74,13 +74,16 @@ function print_topology(
     idxstr = if t in (:Package, :Core, :PU)
         s = "L#$(obj.logical_index) P#$(obj.os_index) "
         if t == :PU && cpukind
-            ck = _osindex2cpukind(obj.os_index)
-            if ck != -1
-                infostr = _stringify_cpukind_infos(get_cpukind_info()[ck].infos)
-            else
-                infostr = "unknown"
+            cks = get_cpukind_info()
+            infostr = "unknown"
+            c = -1
+            if !isempty(cks)
+                c = _osindex2cpukind(obj.os_index)
+                if c != -1
+                    infostr = _stringify_cpukind_infos(cks[c].infos)
+                end
             end
-            s = s * "($ck, $infostr)"
+            s = s * "($c, $infostr)"
         end
         s
     else
@@ -448,19 +451,21 @@ end
 Get the number of different kinds of CPU cores (e.g. efficiency and performance cores)
 in the topology.
 """
-num_cpukinds() = length(get_cpukind_info())
+num_cpukinds() = max(1, length(get_cpukind_info()))
 
 """
 For each kind of CPU cores, get the number of (virtual) cores in the topology that are of that kind.
 Typically, sorting is by efficiency (descending order). Hence, efficiency cores come before
 performance cores.
+
+Returns `nothing` if the CPU kind information is unavailable.
 """
 function num_virtual_cores_cpukinds()
     cks = get_cpukind_info()
-    if nothing in cks
+    if isempty(cks)
         return nothing
     end
-    return [count_set_bits(cks[i].masks) for i in eachindex(cks)]
+    return [(isnothing(cks[i]) ? -1 : count_set_bits(cks[i].masks)) for i in eachindex(cks)]
 end
 
 function _osindex2cpukind(i)
