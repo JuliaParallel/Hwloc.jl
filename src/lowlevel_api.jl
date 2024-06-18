@@ -10,7 +10,10 @@ using ..LibHwloc:
     hwloc_topology_set_all_types_filter, hwloc_topology_set_cache_types_filter,
     hwloc_topology_set_icache_types_filter, hwloc_topology_set_io_types_filter,
     hwloc_topology_set_userdata, hwloc_topology_get_userdata, var"##Ctag#349",
-    var"##Ctag#350"
+    var"##Ctag#350", hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full,
+    hwloc_bitmap_free, hwloc_cpukinds_get_by_cpuset, hwloc_bitmap_from_ulong,
+    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_nr_ulongs,
+    hwloc_bitmap_to_ulongs
 
 using ..LibHwlocExtensions:
     hwloc_pci_class_string
@@ -28,12 +31,12 @@ function cenum_name_to_symbol(cenum_instance, prefix)
     full_name = replace(string(cenum_instance), prefix => "")
     if full_name in uppercase.(special_capitalization)
         idx = findfirst(
-            x->x==full_name, uppercase.(special_capitalization)
+            x -> x == full_name, uppercase.(special_capitalization)
         )
         return Symbol(special_capitalization[idx])
     end
     tail = lowercase(full_name[2:end])
-    return Symbol(full_name[1]*tail)
+    return Symbol(full_name[1] * tail)
 end
 
 obj_types = Symbol[]
@@ -72,9 +75,9 @@ end
 function show(io::IO, a::CacheAttr)
     print(
         io,
-        "Cache{size=$(a.size), "             *
-        "depth=$(a.depth), "                 *
-        "linesize=$(a.linesize), "           *
+        "Cache{size=$(a.size), " *
+        "depth=$(a.depth), " *
+        "linesize=$(a.linesize), " *
         "associativity=$(a.associativity), " *
         "type=$(string(a.type_))}"
     )
@@ -110,16 +113,16 @@ end
 function show(io::IO, a::PCIDevAttr)
     print(
         io,
-        "PCIDev(domain=$(a.domain), "                      *
-        "bus=$(a.bus), "                                   *
-        "dev=$(a.dev), "                                   *
-        "func=$(a.func), "                                 *
+        "PCIDev(domain=$(a.domain), " *
+        "bus=$(a.bus), " *
+        "dev=$(a.dev), " *
+        "func=$(a.func), " *
         "class_id=$(hwloc_pci_class_string(a.class_id)), " *
-        "vendor_id=$(a.vendor_id), "                       *
-        "device_id=$(a.device_id), "                       *
-        "subvendor_id=$(a.subvendor_id), "                 *
-        "subdevice_id=$(a.subdevice_id), "                 *
-        "revision=$(a.revision), "                         *
+        "vendor_id=$(a.vendor_id), " *
+        "device_id=$(a.device_id), " *
+        "subvendor_id=$(a.subvendor_id), " *
+        "subdevice_id=$(a.subdevice_id), " *
+        "revision=$(a.revision), " *
         "linkspeed=$(a.linkspeed))"
     )
 end
@@ -142,8 +145,8 @@ function show(io::IO, a::BridgeAttr)
     print(
         io,
         "BridgeAttr(US=$(hwloc_pci_class_string(a.upstream.pci.class_id)), " *
-        "upstream_type=$(string(a.upstream_type)), "                         *
-        "downstream_type=$(string(a.downstream_type)) "                      *
+        "upstream_type=$(string(a.upstream_type)), " *
+        "downstream_type=$(string(a.downstream_type)) " *
         ")"
     )
 end
@@ -165,43 +168,43 @@ end
 # type MemCacheAttr <: Attribute end
 
 function load_attr(hattr::Ptr{hwloc_obj_attr_u}, type_::Symbol)
-    if type_==:System
+    if type_ == :System
         return NullAttr()
-    elseif type_==:Machine
+    elseif type_ == :Machine
         return NullAttr()
-    elseif type_==:Package
+    elseif type_ == :Package
         return NullAttr()
     elseif type_ ∈ [:Node, :NUMANode]
         return NullAttr()
-    elseif type_==:Socket
+    elseif type_ == :Socket
         return NullAttr()
     elseif type_ ∈ [:Cache, :L1Cache, :L2Cache, :L3Cache, :L4Cache, :L5Cache,
-                    :L1ICache, :L2ICache, :L3ICache]
+        :L1ICache, :L2ICache, :L3ICache]
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return CacheAttr(ha.size, ha.depth, ha.linesize, ha.associativity,
-                         cache_types[ha.type+1])
-    elseif type_==:Core
+            cache_types[ha.type+1])
+    elseif type_ == :Core
         return NullAttr()
-    elseif type_==:PU
+    elseif type_ == :PU
         return NullAttr()
-    elseif type_==:Group
+    elseif type_ == :Group
         ha = unsafe_load(convert(Ptr{hwloc_group_attr_s}, hattr))
         return GroupAttr(ha.depth)
-    elseif type_==:Misc
+    elseif type_ == :Misc
         error("not implemented")
-    elseif type_==:Bridge
+    elseif type_ == :Bridge
         ha = unsafe_load(convert(Ptr{hwloc_bridge_attr_s}, hattr))
         return BridgeAttr(ha)
-    elseif type_==:PCI_Device
+    elseif type_ == :PCI_Device
         ha = unsafe_load(convert(Ptr{hwloc_pcidev_attr_s}, hattr))
         return PCIDevAttr(ha)
-    elseif type_==:OS_Device
+    elseif type_ == :OS_Device
         ha = unsafe_load(convert(Ptr{hwloc_obj_osdev_type_t}, hattr))
         return OSDevAttr(ha)
-    elseif type_==:Die
+    elseif type_ == :Die
         ha = unsafe_load(convert(Ptr{hwloc_cache_attr_s}, hattr))
         return DieAttr(ha.depth)
-    elseif type_==:MemCache
+    elseif type_ == :MemCache
         error("not implemented")
     else
         error("Unsupported object type $type_")
@@ -267,7 +270,7 @@ function load(hobj::hwloc_obj_t)
     @assert hobj != C_NULL
     obj = unsafe_load(hobj)
 
-    @assert Integer(obj.type)>=0 && Integer(obj.type)<length(obj_types)
+    @assert Integer(obj.type) >= 0 && Integer(obj.type) < length(obj_types)
     type_ = obj_types[obj.type+1]
     subtype = obj.subtype == C_NULL ? "" : unsafe_string(obj.subtype)
 
@@ -292,7 +295,7 @@ function load(hobj::hwloc_obj_t)
 
     memory_children = Object[]
     if obj.memory_arity != 0
-        memory_child = obj.memory_first_child 
+        memory_child = obj.memory_first_child
         while memory_child != C_NULL
             push!(memory_children, load(memory_child))
             memory_child = unsafe_load(memory_child).next_sibling
@@ -300,7 +303,7 @@ function load(hobj::hwloc_obj_t)
     end
 
     io_children = Object[]
-    if obj.io_arity != 0 
+    if obj.io_arity != 0
         io_child = obj.io_first_child
         while io_child != C_NULL
             push!(io_children, load(io_child))
@@ -333,7 +336,7 @@ end
 Init underlying Hwloc objec, and set the type filter to
 HWLOC_TYPE_FILTER_KEEP_ALL if `io==true`
 """
-function topology_init(;io=true)
+function topology_init(; io=true)
     r_htopo = Ref{hwloc_topology_t}()
     hwloc_topology_init(r_htopo)
     if io
@@ -352,6 +355,65 @@ function get_type_filter(topology, object_type)
     return r_type_filter[]
 end
 
+function withbitmap(f; full=false)
+    bm = full ? hwloc_bitmap_alloc_full() : hwloc_bitmap_alloc()
+    try
+        f(bm)
+    finally
+        hwloc_bitmap_free(bm)
+    end
+end
+
+function ith_in_mask(mask::Culong, i::Integer)
+    # i starts at 0
+    imask = Culong(0) | (1 << i)
+    return !iszero(mask & imask)
+end
+
+count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 0:(sizeof(Culong) * 8 - 1))
+count_set_bits(masks::Vector{Culong}) = sum(count_set_bits.(masks))
+
+struct HwlocInfo
+    name::String
+    value::String
+end
+
+"""
+Get information of cores of the same cpukind. `kind_index` starts at 1.
+"""
+function get_info_cpukind(htopo, kind_index)
+    withbitmap() do bm
+        infos = Ref{Ptr{hwloc_info_s}}()
+        efficiency = Ref{Cint}()
+        nr_infos = Ref{Cuint}()
+        ret = hwloc_cpukinds_get_info(htopo, kind_index - 1, bm, efficiency, nr_infos, infos, 0)
+        if ret != 0
+            return nothing
+        end
+        # extract infos
+        infovec = unsafe_wrap(Array, infos[], (nr_infos[],))
+        infovecjl = Vector{HwlocInfo}(undef, nr_infos[])
+        for (i, x) in pairs(infovec)
+            infovecjl[i] = HwlocInfo(unsafe_string(x.name), unsafe_string(x.value))
+        end
+        # extract masks
+        nr = hwloc_bitmap_nr_ulongs(bm) # number of ulongs needed to represent bitmap
+        masks = [Culong(0) for _ in 1:nr]
+        hwloc_bitmap_to_ulongs(bm, nr, masks)
+        # The lower the efficiency rank the more efficient the core.
+        # For example, we expect efficiency_rank=0 for efficiency cores and
+        # efficiency_rank=1 for performance cores (if there's two kinds of cores).
+        return (; masks=masks, efficiency_rank=efficiency[], infos=infovecjl)
+    end
+end
+
+const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,
+    @NamedTuple{masks::Vector{Culong}, efficiency_rank::Int32, infos::Vector{HwlocInfo}}}}}}(nothing)
+
+function get_cpukind_info()
+    isnothing(_cpukindinfo[]) && topology_load()
+    return _cpukindinfo[]
+end
 
 """
     topology_load() -> Hwloc.Object
@@ -369,7 +431,15 @@ function topology_load(htopo=topology_init())
     root = hwloc_get_obj_by_depth(htopo, 0, 0)
     topo = load(root)
 
-    hwloc_topology_destroy(htopo)
+    ncpukinds = hwloc_cpukinds_get_nr(htopo, 0)
+    if ncpukinds > 0
+        # more than one CPU kind detected
+        _cpukindinfo[] = [get_info_cpukind(htopo, kind_index) for kind_index in 1:ncpukinds]
+    else
+        # CPU kind information is unavailable
+        _cpukindinfo[] = []
+    end
 
+    hwloc_topology_destroy(htopo)
     return topo
 end

@@ -126,4 +126,13 @@ import CpuId
         # check that `children(gettopology)` returns the root of the HwlocTree
         @test children(t).type == :Machine
     end
+
+    @testset "CPU core kinds" begin
+        @test num_cpukinds() >= 1
+        @test typeof(num_virtual_cores_cpukinds()) in (Nothing, Vector{Int})
+        if !isnothing(num_virtual_cores_cpukinds())
+            @test all(>=(1), num_virtual_cores_cpukinds())
+            @test sum(num_virtual_cores_cpukinds()) == num_virtual_cores()
+        end
+    end
 end
