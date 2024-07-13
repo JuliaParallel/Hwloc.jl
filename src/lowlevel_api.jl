@@ -248,8 +248,7 @@ end
 function iterate(::Object, state::Vector{Object})
     isempty(state) && return nothing
     # depth-first traversal
-    # obj = shift!(state)
-    obj, state = state[1], state[2:end]
+    obj = popfirst!(state)
     # prepend! children groups to state so that they will be iterated before
     # siblings.  The iteration order is memory_children, children, io_children
     # to match lstopo ordering, but we must prepend! in the opposite order to
@@ -259,7 +258,6 @@ function iterate(::Object, state::Vector{Object})
     prepend!(state, obj.memory_children)
     return obj, state
 end
-# length(obj::Object) = mapreduce(x->1, +, obj)
 
 attributes(obj::Object) = obj.attr
 children(obj::Object) = obj.children
