@@ -182,16 +182,25 @@ Returns the top-level system topology `Object`.
 
 On first call, it loads the topology by querying libhwloc and caches the result.
 Pass `reload=true` in order to force reload.
+
+The keyword arguments `io` (default: `true`) and `disallowed` (default: `false`) may be
+used to select whether IO objects and disallowed objects (e.g. ignoring cgroup restrictions)
+should be included in the topology, respectively.
 """
-function gettopology(htopo=nothing; reload=false, io=true)
+function gettopology(htopo=nothing; reload=false, io=true, disallowed=false)
     if reload || (!isassigned(machine_topology))
         if isnothing(htopo)
-            htopo = topology_init(; io=io)
+            htopo = topology_init(; io=io, disallowed=disallowed)
         end
         machine_topology[] = topology_load(htopo)
     end
 
     return machine_topology[]
+end
+
+function get_cpukind_info()
+    isnothing(_cpukindinfo[]) && gettopology()
+    return _cpukindinfo[]
 end
 
 """
