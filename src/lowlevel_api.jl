@@ -13,7 +13,7 @@ using ..LibHwloc:
     var"##Ctag#350", hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full,
     hwloc_bitmap_free, hwloc_cpukinds_get_by_cpuset, hwloc_bitmap_from_ulong,
     hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_nr_ulongs,
-    hwloc_bitmap_to_ulongs
+    hwloc_bitmap_to_ulongs, hwloc_topology_set_flags
 
 using ..LibHwlocExtensions:
     hwloc_pci_class_string
@@ -329,17 +329,23 @@ end
 
 
 """
-    topology_init(;io=true)
+    topology_init(; io=true, disallowed=false)
 
-Init underlying Hwloc objec, and set the type filter to
-HWLOC_TYPE_FILTER_KEEP_ALL if `io==true`
+Init underlying Hwloc object.
+If `io==true`, set the type filter to HWLOC_TYPE_FILTER_KEEP_ALL.
+If `disallowed==true`, set the flag HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED.
 """
-function topology_init(; io=true)
+function topology_init(; io=true, disallowed=false)
     r_htopo = Ref{hwloc_topology_t}()
     hwloc_topology_init(r_htopo)
     if io
         hwloc_topology_set_io_types_filter(
             r_htopo[], LibHwloc.HWLOC_TYPE_FILTER_KEEP_ALL
+        )
+    end
+    if disallowed
+        hwloc_topology_set_flags(
+            r_htopo[], LibHwloc.HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED
         )
     end
     return r_htopo[]
@@ -407,11 +413,6 @@ end
 
 const _cpukindinfo = Ref{Union{Nothing,Vector{Union{Nothing,
     @NamedTuple{masks::Vector{Culong}, efficiency_rank::Int32, infos::Vector{HwlocInfo}}}}}}(nothing)
-
-function get_cpukind_info()
-    isnothing(_cpukindinfo[]) && topology_load()
-    return _cpukindinfo[]
-end
 
 """
     topology_load() -> Hwloc.Object

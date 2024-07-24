@@ -18,6 +18,7 @@ import CpuId
         @test isa(topo, Hwloc.Object)
         @test hwloc_typeof(topo) ∈ (:Machine, :System)
         @test hwloc_isa(topo, :Machine) || hwloc_isa(topology, :System)
+        # topo = gettoplogy(; disallowed=true)
     end
 
     @testset "Topology (compact info)" begin
