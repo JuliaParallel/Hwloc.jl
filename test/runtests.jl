@@ -1,6 +1,5 @@
 using Hwloc
 using Test
-using Statistics
 import CpuId
 
 @testset "Hwloc.jl" begin

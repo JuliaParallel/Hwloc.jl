@@ -1,6 +1,7 @@
 module HwlocTrees
 
-using Hwloc, Printf
+using Hwloc
+using Printf: Printf, @sprintf
 import AbstractTrees
 
 mutable struct HwlocTreeNode{T}

@@ -4,32 +4,27 @@ authors = ["Erik Schnetter <schnetter@gmail.com>"]
 version = "3.2.0"
 
 [deps]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 Hwloc_jll = "e33a78d0-f292-5ffc-b300-72abe9b543c8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-# here for compatibility with older versions of Julia (that don't have extensions):
-# https://pkgdocs.julialang.org/v1/creating-packages/#Transition-from-normal-dependency-to-extension
-AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 
 [weakdeps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 
+[extensions]
+HwlocTrees = "AbstractTrees"
+
 [compat]
+AbstractTrees = "^0.4, ^0.3"
 CEnum = "^0.4, ^0.5"
 Hwloc_jll = "^2.8"
-AbstractTrees = "^0.4, ^0.3"
 julia = "^1.10"
 
 [extras]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
-
-[extensions]
-# Conditional dependencies: https://pkgdocs.julialang.org/v1/creating-packages/#Conditional-loading-of-code-in-packages-(Extensions)
-# Note: use a list for multiple extension dependencies
-HwlocTrees = "AbstractTrees"
 
 [targets]
 test = ["Test", "CpuId", "AbstractTrees"]

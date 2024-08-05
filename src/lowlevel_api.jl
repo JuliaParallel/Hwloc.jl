@@ -1,19 +1,14 @@
 using ..LibHwloc:
-    hwloc_cpuset_t, hwloc_nodeset_t, hwloc_obj_type_t, hwloc_obj_cache_type_t,
-    hwloc_obj_bridge_type_t, hwloc_obj_osdev_type_t, hwloc_distances_s,
-    hwloc_obj, hwloc_obj_t, hwloc_obj_attr_u, hwloc_cache_attr_s,
-    hwloc_group_attr_s, hwloc_bridge_attr_s, hwloc_pcidev_attr_s,
-    hwloc_osdev_attr_s, hwloc_topology_t, hwloc_topology_init,
-    hwloc_topology_load, hwloc_topology_get_depth, hwloc_get_nbobjs_by_depth,
-    hwloc_get_obj_by_depth, hwloc_topology_destroy, hwloc_type_filter_e,
-    hwloc_topology_set_type_filter, hwloc_topology_get_type_filter,
-    hwloc_topology_set_all_types_filter, hwloc_topology_set_cache_types_filter,
-    hwloc_topology_set_icache_types_filter, hwloc_topology_set_io_types_filter,
-    hwloc_topology_set_userdata, hwloc_topology_get_userdata, var"##Ctag#349",
-    var"##Ctag#350", hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full,
-    hwloc_bitmap_free, hwloc_cpukinds_get_by_cpuset, hwloc_bitmap_from_ulong,
-    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_nr_ulongs,
-    hwloc_bitmap_to_ulongs, hwloc_topology_set_flags
+    hwloc_obj_type_t, hwloc_obj_cache_type_t, hwloc_obj_bridge_type_t,
+    hwloc_obj_osdev_type_t, hwloc_obj_t, hwloc_obj_attr_u, hwloc_cache_attr_s,
+    hwloc_group_attr_s, hwloc_bridge_attr_s, hwloc_pcidev_attr_s, hwloc_topology_t,
+    hwloc_topology_init, hwloc_topology_load, hwloc_topology_get_depth,
+    hwloc_get_nbobjs_by_depth, hwloc_get_obj_by_depth, hwloc_topology_destroy,
+    hwloc_type_filter_e, hwloc_topology_get_type_filter,
+    hwloc_topology_set_io_types_filter, var"##Ctag#349", var"##Ctag#350",
+    hwloc_cpukinds_get_nr, hwloc_bitmap_alloc, hwloc_bitmap_alloc_full, hwloc_bitmap_free,
+    hwloc_cpukinds_get_info, hwloc_info_s, hwloc_bitmap_nr_ulongs, hwloc_bitmap_to_ulongs,
+    hwloc_topology_set_flags
 
 using ..LibHwlocExtensions:
     hwloc_pci_class_string
@@ -374,7 +369,7 @@ function ith_in_mask(mask::Culong, i::Integer)
     return !iszero(mask & imask)
 end
 
-count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 0:(sizeof(Culong) * 8 - 1))
+count_set_bits(mask::Culong) = count(i -> ith_in_mask(mask, i), 0:(sizeof(Culong)*8-1))
 count_set_bits(masks::Vector{Culong}) = sum(count_set_bits.(masks))
 
 struct HwlocInfo

@@ -1,9 +1,9 @@
 module LibHwloc
 
-using Hwloc_jll
+using Hwloc_jll: Hwloc_jll, libhwloc
 export Hwloc_jll
 
-using CEnum
+using CEnum: CEnum, @cenum
 
 const __pid_t = Cint
 
